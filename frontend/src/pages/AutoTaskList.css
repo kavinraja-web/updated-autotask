@@ -1,0 +1,398 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Patrick+Hand&display=swap');
+
+/* =============================================
+   EXAM PAD / HANDWRITTEN THEME
+   ============================================= */
+
+.exam-pad-page {
+    min-height: calc(100vh - 70px);
+    display: flex;
+    background: #d6cfc4;
+    position: relative;
+    font-family: 'Caveat', cursive;
+}
+
+/* ---- Spiral Binding (Left side) ---- */
+.spiral-binding {
+    width: 52px;
+    min-height: 100%;
+    background: linear-gradient(180deg, #2a2a2a, #3a3a3a);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 0;
+    gap: 2.5rem;
+    position: sticky;
+    top: 0;
+    flex-shrink: 0;
+    z-index: 20;
+    box-shadow: 4px 0 16px rgba(0,0,0,0.35);
+}
+
+.spiral-hole {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #d6cfc4;
+    border: 3px solid #555;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.4), 0 1px 3px rgba(255,255,255,0.05);
+    position: relative;
+}
+
+.spiral-hole::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #2a2a2a;
+}
+
+/* ---- Main Paper Area ---- */
+.pad-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fffef5;
+    position: relative;
+    padding: 2rem 3rem 0 3rem;
+    background-image:
+        linear-gradient(90deg, transparent 84px, #f08080 84px, #f08080 86px, transparent 86px);
+    background-size: 100% 100%;
+    overflow-y: auto;
+}
+
+/* ---- Header ---- */
+.pad-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    padding-left: 96px;
+    border-bottom: 2.5px solid #3a6fa5;
+}
+
+.pad-title-area {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.pen-icon-wrap {
+    color: #3a5f8a;
+    display: flex;
+    align-items: center;
+    transform: rotate(-12deg);
+    filter: drop-shadow(1px 1px 0 rgba(0,0,0,0.15));
+}
+
+.pad-title {
+    font-family: 'Caveat', cursive;
+    font-size: 2.6rem;
+    font-weight: 700;
+    color: #1a3a5c;
+    margin: 0;
+    line-height: 1;
+    text-decoration: underline wavy #4a6fa5;
+    text-underline-offset: 5px;
+}
+
+.pad-subtitle {
+    font-family: 'Caveat', cursive;
+    font-size: 1.1rem;
+    color: #6b8fa8;
+    margin: 0.15rem 0 0 0;
+    font-style: italic;
+}
+
+/* ---- Search Bar ---- */
+.pad-search {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(255,255,255,0.85);
+    border: 1.5px solid #a8c4e0;
+    border-bottom: 2px solid #3a6fa5;
+    border-radius: 2px;
+    padding: 0.45rem 1rem;
+    width: 250px;
+    box-shadow: 2px 3px 8px rgba(0,0,0,0.07);
+}
+
+.pad-search input {
+    border: none; background: transparent; outline: none;
+    font-family: 'Caveat', cursive;
+    font-size: 1.15rem;
+    color: #1a3a5c;
+    width: 100%;
+}
+
+.pad-search input::placeholder { color: #a0b8cc; }
+.search-ink-icon { color: #6b8fa8; flex-shrink: 0; }
+
+/* ---- Task Counter ---- */
+.task-counter-line {
+    font-family: 'Caveat', cursive;
+    font-size: 1.05rem;
+    color: #8a6f4a;
+    padding-left: 96px;
+    margin-bottom: 0.5rem;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ---- Task List ---- */
+.pad-task-list {
+    padding-left: 96px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding-bottom: 4rem;
+    background-image: repeating-linear-gradient(
+        transparent,
+        transparent 38.5px,
+        #a8c8e8 38.5px,
+        #a8c8e8 40px
+    );
+    background-size: 100% 40px;
+    background-position: 0 0;
+}
+
+/* ---- Individual Task Item ---- */
+.task-paper-item {
+    position: relative;
+    min-height: 80px;
+    display: flex;
+    align-items: flex-start;
+    border-bottom: none;
+    transition: background-color 0.2s ease;
+    background-color: #fffef5;
+    background-image: repeating-linear-gradient(
+        transparent,
+        transparent 38.5px,
+        #a8c8e8 38.5px,
+        #a8c8e8 40px
+    );
+    background-size: 100% 40px;
+    background-position: 0 0;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.task-paper-item:hover {
+    background-color: #ffffe4;
+    border-radius: 4px;
+}
+
+.paper-item-inner {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+}
+
+/* Checkbox Row */
+.paper-checkbox-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    margin-bottom: 0.7rem;
+}
+
+/* Exam-style square checkbox */
+.paper-checkbox {
+    width: 22px;
+    height: 22px;
+    border: 2px solid #3a5f8a;
+    background: transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Caveat', cursive;
+    font-size: 1.1rem;
+    color: #1a5c1a;
+    flex-shrink: 0;
+    margin-top: 4px;
+    transition: all 0.2s;
+    font-weight: 700;
+}
+
+.paper-checkbox:hover {
+    background: rgba(58, 95, 138, 0.08);
+    transform: scale(1.08);
+}
+
+.paper-checkbox.checked {
+    background: rgba(26, 92, 26, 0.07);
+    border-color: #1a5c1a;
+    color: #1a5c1a;
+}
+
+/* Task Title */
+.paper-task-title {
+    font-family: 'Caveat', cursive;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #1a2744;
+    margin: 0;
+    line-height: 1.35;
+    flex: 1;
+    transition: all 0.3s;
+}
+
+.paper-task-title.strike {
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+    color: #8a9ab0;
+}
+
+/* Delete button */
+.paper-del-btn {
+    background: transparent;
+    border: none;
+    color: #c4a8a8;
+    cursor: pointer;
+    padding: 3px 5px;
+    border-radius: 3px;
+    transition: all 0.2s;
+    opacity: 0;
+    display: flex;
+    align-items: center;
+}
+
+.task-paper-item:hover .paper-del-btn { opacity: 1; }
+.paper-del-btn:hover { color: #c0392b; background: rgba(192,57,43,0.08); }
+
+/* Meta row */
+.paper-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    padding-left: 30px;
+    font-family: 'Caveat', cursive;
+    font-size: 1rem;
+    flex-wrap: wrap;
+}
+
+.paper-priority-tag {
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+}
+
+.paper-source {
+    color: #8a9ab0;
+    font-style: italic;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.paper-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: #8a6f4a;
+    font-size: 0.95rem;
+}
+
+/* ---- Completed Stamp ---- */
+.is-done { opacity: 0.55; }
+
+.completed-stamp {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 0.8rem 0;
+}
+
+.stamp-inner {
+    font-family: 'Caveat', cursive;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1a5c1a;
+    border: 3px solid #1a5c1a;
+    padding: 0.2rem 1.5rem;
+    border-radius: 6px;
+    opacity: 0.65;
+    letter-spacing: 0.06em;
+    background: rgba(26, 92, 26, 0.05);
+    transform: rotate(-2.5deg);
+    display: inline-block;
+    box-shadow: 1px 2px 0 rgba(0,0,0,0.08);
+}
+
+/* ---- Empty State ---- */
+.pad-empty {
+    text-align: center;
+    padding: 5rem 2rem;
+    font-family: 'Caveat', cursive;
+    padding-left: 0;
+}
+
+.empty-checkmark {
+    font-size: 4rem;
+    color: #1a5c1a;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.pad-empty h2 {
+    font-size: 2.8rem;
+    color: #1a3a5c;
+    margin: 0 0 0.5rem 0;
+    text-decoration: underline wavy #4a6fa5;
+    text-underline-offset: 4px;
+}
+
+.pad-empty p {
+    font-size: 1.3rem;
+    color: #6b8fa8;
+    font-style: italic;
+}
+
+.spin-icon {
+    animation: spin 1s linear infinite;
+    color: #4a6fa5;
+    margin-bottom: 1rem;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.is-processing { opacity: 0.7; }
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+    .spiral-binding { width: 36px; gap: 2rem; padding: 2rem 0; }
+    .spiral-hole { width: 18px; height: 18px; }
+    .spiral-hole::after { width: 6px; height: 6px; }
+
+    .pad-content {
+        padding: 1.5rem 1.2rem 0 1.2rem;
+        background-image:
+            linear-gradient(90deg, transparent 64px, #f08080 64px, #f08080 66px, transparent 66px);
+    }
+
+    .pad-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+        padding-left: 72px;
+    }
+
+    .task-counter-line,
+    .pad-task-list { padding-left: 72px; }
+    .pad-search { width: 100%; }
+    .pad-title { font-size: 1.9rem; }
+}

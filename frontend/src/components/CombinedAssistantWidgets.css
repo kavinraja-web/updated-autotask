@@ -1,0 +1,134 @@
+/* ═════════════════════════════════════════════════════════
+   COMBINED ASSISTANT WIDGETS
+   ═════════════════════════════════════════════════════════ */
+
+.combined-assistant-wrapper {
+    position: fixed;
+    z-index: 2000;
+}
+
+/* ── Main FAB Container ── */
+.main-fab-container {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+/* On mobile, lift FAB above the 120px arc bottom nav */
+@media (max-width: 768px) {
+    .main-fab-container {
+        bottom: 9rem;
+        right: 1.2rem;
+    }
+}
+
+/* ── Master AI FAB (The single trigger button) ── */
+.master-ai-fab {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #7C3AED 0%, #10B981 100%);
+    color: white;
+    box-shadow: 0 8px 32px rgba(124, 58, 237, 0.4), 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 20;
+    transition: box-shadow 0.3s ease;
+}
+
+.master-ai-fab:hover {
+    box-shadow: 0 12px 40px rgba(124, 58, 237, 0.55), 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* ── Hover Menu (Expanded Options) ── */
+.fab-hover-menu {
+    position: absolute;
+    bottom: 80px; /* spacing above the main fab */
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(124, 58, 237, 0.15);
+    border-radius: 16px;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    box-shadow: 0 12px 48px rgba(124, 58, 237, 0.25), 0 4px 16px rgba(0,0,0,0.06);
+    min-width: 200px;
+    z-index: 10;
+}
+
+/* ── Menu Arrow pointing to main FAB ── */
+.fab-menu-arrow {
+    position: absolute;
+    bottom: -8px;
+    right: 22px; /* align with the middle of the main FAB */
+    width: 16px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.95);
+    border-right: 1px solid rgba(124, 58, 237, 0.15);
+    border-bottom: 1px solid rgba(124, 58, 237, 0.15);
+    transform: rotate(45deg);
+    z-index: -1;
+}
+
+/* ── Sub Options ── */
+.fab-option-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    background: transparent;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.fab-option-text {
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    color: #1E1B4B;
+}
+
+.fab-option-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.fab-option-btn:hover {
+    background: rgba(124, 58, 237, 0.05);
+}
+
+.fab-option-btn:hover .fab-option-icon {
+    transform: scale(1.1) rotate(-5deg);
+}
+
+/* Color variations for the internal icon circles */
+.voice-bg .fab-option-icon {
+    background: linear-gradient(135deg, #EC4899 0%, #F59E0B 100%);
+    box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+}
+
+.agent-bg .fab-option-icon {
+    background: linear-gradient(135deg, #7C3AED 0%, #3B82F6 100%);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}

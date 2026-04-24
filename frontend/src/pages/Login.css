@@ -1,0 +1,256 @@
+/* ═══════════════════════════════════════════════════
+   LOGIN PAGE — SPOTLIGHT HERO
+═══════════════════════════════════════════════════ */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 2rem;
+  background: #F8F6FF;
+}
+
+/* ─── Animated gradient background ───── */
+.login-bg-gradient {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at var(--mx, 50%) var(--my, 50%),
+      rgba(124,58,237,0.22) 0%,
+      rgba(139,92,246,0.12) 30%,
+      transparent 65%),
+    linear-gradient(135deg, #F0EBFF 0%, #FFF6ED 50%, #EBFEFF 100%);
+  transition: background 0.1s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Spotlight ring ──────────────────── */
+.spotlight-ring {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(124,58,237,0.18) 0%,
+    rgba(245,158,11,0.08) 40%,
+    transparent 70%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  animation: spotlightPulse 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+.spotlight-ring-2 {
+  position: absolute;
+  width: 900px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse,
+    rgba(245,158,11,0.1) 0%,
+    rgba(236,72,153,0.06) 40%,
+    transparent 70%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  animation: spotlightPulse 6s ease-in-out infinite reverse;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Floating decorative shapes ─────── */
+.login-deco {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.deco-1 {
+  width: 120px; height: 120px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(139,92,246,0.15));
+  top: 8%; left: 8%;
+  animation: floatSlow 7s ease-in-out infinite;
+}
+.deco-2 {
+  width: 80px; height: 80px;
+  background: linear-gradient(135deg, rgba(245,158,11,0.3), rgba(252,211,77,0.2));
+  top: 15%; right: 12%;
+  animation: floatSlow 5s ease-in-out infinite 1s;
+}
+.deco-3 {
+  width: 160px; height: 160px;
+  background: linear-gradient(135deg, rgba(6,182,212,0.18), transparent);
+  bottom: 12%; right: 8%;
+  animation: floatSlow 9s ease-in-out infinite 2s;
+}
+.deco-4 {
+  width: 60px; height: 60px;
+  background: linear-gradient(135deg, rgba(236,72,153,0.25), transparent);
+  bottom: 20%; left: 10%;
+  animation: floatSlow 6s ease-in-out infinite 0.5s;
+}
+
+/* ─── Star sparkles ───────────────────── */
+.star-sparkle {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  font-size: 1.2rem;
+  animation: starTwinkle 3s ease-in-out infinite;
+}
+
+/* ─── Card ────────────────────────────── */
+.login-card {
+  width: 100%;
+  max-width: 460px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1.5px solid rgba(124,58,237,0.15);
+  border-radius: var(--r-2xl);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.8),
+    0 24px 80px rgba(124,58,237,0.18),
+    0 4px 20px rgba(0,0,0,0.07);
+  padding: 3rem 2.75rem;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  animation: scaleIn 0.5s cubic-bezier(.22,1,.36,1) both;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+.login-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.8),
+    0 32px 96px rgba(124,58,237,0.24),
+    0 8px 30px rgba(0,0,0,0.09);
+}
+
+/* Card top glow bar */
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--purple), var(--pink), var(--amber));
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
+
+/* ─── Logo ────────────────────────────── */
+.login-logo-wrap { display: flex; justify-content: center; margin-bottom: 1.5rem; }
+
+.logo-icon-large {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, var(--purple-d), var(--purple-l));
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow:
+    0 12px 36px rgba(124,58,237,0.42),
+    0 0 0 6px rgba(124,58,237,0.1);
+  animation: borderGlow 3s ease-in-out infinite;
+}
+
+/* ─── Headline ────────────────────────── */
+.login-headline {
+  margin-bottom: 0.4rem;
+}
+.login-headline h1 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #5B21B6 0%, #7C3AED 40%, #EC4899 80%, #F59E0B 100%);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 5s linear infinite;
+}
+.login-headline p {
+  font-size: 0.9rem;
+  color: var(--text-2);
+  line-height: 1.65;
+  margin-top: 0.5rem;
+}
+
+/* ─── Feature chips ───────────────────── */
+.login-features {
+  display: flex;
+  justify-content: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin: 1.35rem 0 1.75rem;
+}
+.feature-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: transform 0.2s ease;
+}
+.feature-chip:hover { transform: translateY(-2px) scale(1.05); }
+.chip-purple { background: rgba(124,58,237,0.1); color: var(--purple); border: 1px solid rgba(124,58,237,0.2); }
+.chip-amber  { background: rgba(245,158,11,0.1);  color: #B45309;      border: 1px solid rgba(245,158,11,0.2); }
+.chip-teal   { background: rgba(6,182,212,0.1);   color: #0E7490;      border: 1px solid rgba(6,182,212,0.2); }
+.chip-pink   { background: rgba(236,72,153,0.1);  color: #9D174D;      border: 1px solid rgba(236,72,153,0.2); }
+
+/* ─── Google Button ───────────────────── */
+.login-action { display: flex; flex-direction: column; align-items: center; gap: 0.85rem; }
+
+.google-signin-btn {
+  width: 100%;
+  max-width: 315px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1.75rem;
+  background: #fff;
+  color: #374151;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: var(--r-md);
+  border: 1.5px solid rgba(124,58,237,0.2);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.08), 0 2px 6px rgba(124,58,237,0.1);
+  cursor: pointer;
+  transition: all 0.28s cubic-bezier(.22,1,.36,1);
+  letter-spacing: 0.01em;
+}
+.google-signin-btn:hover {
+  border-color: var(--purple);
+  box-shadow: 0 10px 32px rgba(124,58,237,0.22), 0 4px 12px rgba(0,0,0,0.08);
+  transform: translateY(-3px) scale(1.01);
+}
+.google-signin-btn:active { transform: translateY(-1px) scale(0.99); }
+
+.login-disclaimer {
+  font-size: 0.74rem;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+
+/* ─── Footer ──────────────────────────── */
+.login-footer-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.76rem;
+  color: var(--text-3);
+}
