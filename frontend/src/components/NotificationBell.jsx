@@ -51,7 +51,7 @@ const NotificationBell = () => {
 
         const client = new Client({
             // Assuming your backend runs on port 8081 locally
-            webSocketFactory: () => new SockJS('http://localhost:8081/ws-live-updates'),
+            webSocketFactory: () => new SockJS(`${import.meta.env.VITE_API_URL || 'http://localhost:8081'}/ws-live-updates`),
             debug: function (str) {
               // console.log(str);
             },

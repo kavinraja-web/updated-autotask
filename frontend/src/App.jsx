@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import './App.css';
+
+// In production (Vercel), VITE_API_URL points to Railway backend.
+// Locally, vite proxy handles /api → localhost:8081, so baseURL stays empty.
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
+axios.defaults.withCredentials = true;
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import EmailAnalysis from './pages/EmailAnalysis';
