@@ -31,7 +31,10 @@ const Login = ({ onLogin }) => {
         const accessToken = tokenResponse.access_token;
         const profileRes  = await axios.get(
           'https://www.googleapis.com/oauth2/v3/userinfo',
-          { headers: { Authorization: `Bearer ${accessToken}` } }
+          { 
+            headers: { Authorization: `Bearer ${accessToken}` },
+            withCredentials: false 
+          }
         );
         const { sub, email, name } = profileRes.data;
         const credentialResponse = { credential: accessToken, accessToken, email, name, sub };
