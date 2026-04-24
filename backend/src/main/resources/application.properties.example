@@ -1,0 +1,30 @@
+# =============================================
+# application.properties.example
+# Copy this as application.properties and fill in your values.
+# This file IS safe to commit. The real application.properties is gitignored.
+# =============================================
+
+# --- Database (Railway / PlanetScale / local MySQL) ---
+spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/smart_task_manager?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+spring.datasource.username=${DB_USER:root}
+spring.datasource.password=${DB_PASSWORD:yourpassword}
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=false
+
+# --- Server (Render injects PORT automatically) ---
+server.port=${PORT:8081}
+
+# --- Google OAuth2 ---
+spring.security.oauth2.client.registration.google.client-id=${GOOGLE_CLIENT_ID:your-client-id}
+spring.security.oauth2.client.registration.google.client-secret=${GOOGLE_CLIENT_SECRET:your-client-secret}
+spring.security.oauth2.client.registration.google.scope=openid,profile,email,https://www.googleapis.com/auth/gmail.readonly,https://www.googleapis.com/auth/gmail.send
+
+# --- Gemini AI ---
+gemini.api.key=${GEMINI_API_KEY:your-gemini-api-key}
+
+# --- CORS Frontend URL ---
+frontend.url=${FRONTEND_URL:http://localhost:5173}
+
+# --- Scheduler ---
+automation.schedule.cron=0 */15 * * * *
