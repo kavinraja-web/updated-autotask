@@ -94,11 +94,17 @@
 /* ─── Mobile Dropdown Fix ─────────────────────────── */
 @media (max-width: 768px) {
   .notification-dropdown {
-    width: calc(100vw - 2rem);  /* full width minus side padding */
-    right: -0.5rem;
-    left: auto;
-    max-height: 70vh;
-    top: calc(100% + 0.75rem);
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    width: calc(100vw - 2rem);
+    height: max-content;
+    max-height: 85vh;
+    z-index: 999999;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 100vmax rgba(15, 23, 42, 0.4); /* Faux backdrop */
   }
 
   .notification-bell-btn {
@@ -106,6 +112,6 @@
   }
 
   .notification-list {
-    max-height: 50vh;
+    max-height: calc(85vh - 110px);
   }
 }

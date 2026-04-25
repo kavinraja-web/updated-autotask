@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, Check, Trash2, Settings } from 'lucide-react';
 import axios from 'axios';
 import { Client } from '@stomp/stompjs';
@@ -11,8 +12,10 @@ const NotificationBell = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
     const dropdownRef = useRef(null);
+    const dropdownContentRef = useRef(null);
     const userEmail = localStorage.getItem('user_email'); // Need this to fetch user ID indirectly or identify user
     const [userId, setUserId] = useState(null);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
     // Initial setup: fetch user identity & notifications
     useEffect(() => {
@@ -42,6 +45,10 @@ const NotificationBell = () => {
             // Usually, WebSocket handles real-time Data. This is a fallback or for system alerts.
             console.log('Received foreground message via FCM', payload);
         });
+
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
 
     }, [userEmail]);
 
@@ -109,7 +116,10 @@ const NotificationBell = () => {
     // Click outside to close
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+            const isOutsideContainer = dropdownRef.current && !dropdownRef.current.contains(event.target);
+            const isOutsideContent = dropdownContentRef.current && !dropdownContentRef.current.contains(event.target);
+            
+            if (isOutsideContainer && isOutsideContent) {
                 setIsOpen(false);
             }
         };
@@ -123,6 +133,44 @@ const NotificationBell = () => {
         return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' - ' + d.toLocaleDateString();
     };
 
+    const dropdownContent = (
+        <div className="notification-dropdown animate-fade-in" ref={dropdownContentRef}>
+            <div className="notification-header">
+                <h3>Notifications</h3>
+                <div className="notification-actions">
+                    <button onClick={markAllAsRead} className="text-btn" title="Mark all as read">
+                        <Check size={14} /> Read All
+                    </button>
+                </div>
+            </div>
+            
+            <div className="notification-list">
+                {notifications.length === 0 ? (
+                    <div className="notification-empty">
+                        <Bell size={30} strokeOpacity={0.2} />
+                        <p>You have no notifications right now.</p>
+                    </div>
+                ) : (
+                    notifications.map(notif => (
+                        <div key={notif.id} className={`notification-item ${!notif.read ? 'unread' : ''}`}>
+                            <div className="notif-content" onClick={() => !notif.read && markAsRead(notif.id)}>
+                                <div className="notif-type">{notif.type.replace('_', ' ')}</div>
+                                <div className="notif-message">{notif.message}</div>
+                                <div className="notif-time">{formatDate(notif.createdAt)}</div>
+                            </div>
+                            <button className="notif-delete" onClick={() => deleteNotification(notif.id)}>
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
+                    ))
+                )}
+            </div>
+            <div className="notification-footer">
+                <button className="settings-btn"><Settings size={14} /> Preferences</button>
+            </div>
+        </div>
+    );
+
     return (
         <div className="notification-container" ref={dropdownRef}>
             <button className="notification-bell-btn" onClick={() => setIsOpen(!isOpen)}>
@@ -133,41 +181,9 @@ const NotificationBell = () => {
             </button>
 
             {isOpen && (
-                <div className="notification-dropdown animate-fade-in">
-                    <div className="notification-header">
-                        <h3>Notifications</h3>
-                        <div className="notification-actions">
-                            <button onClick={markAllAsRead} className="text-btn" title="Mark all as read">
-                                <Check size={14} /> Read All
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div className="notification-list">
-                        {notifications.length === 0 ? (
-                            <div className="notification-empty">
-                                <Bell size={30} strokeOpacity={0.2} />
-                                <p>You have no notifications right now.</p>
-                            </div>
-                        ) : (
-                            notifications.map(notif => (
-                                <div key={notif.id} className={`notification-item ${!notif.read ? 'unread' : ''}`}>
-                                    <div className="notif-content" onClick={() => !notif.read && markAsRead(notif.id)}>
-                                        <div className="notif-type">{notif.type.replace('_', ' ')}</div>
-                                        <div className="notif-message">{notif.message}</div>
-                                        <div className="notif-time">{formatDate(notif.createdAt)}</div>
-                                    </div>
-                                    <button className="notif-delete" onClick={() => deleteNotification(notif.id)}>
-                                        <Trash2 size={14} />
-                                    </button>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                    <div className="notification-footer">
-                        <button className="settings-btn"><Settings size={14} /> Preferences</button>
-                    </div>
-                </div>
+                isMobile 
+                    ? createPortal(dropdownContent, document.body) 
+                    : dropdownContent
             )}
         </div>
     );

@@ -24,7 +24,7 @@ public class GeminiService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TaskAnalysisResult analyzeEmailForTask(String subject, String body, boolean autoSend) {
-        if (apiKey == null || apiKey.isBlank() || apiKey.equals("YOUR_OPENAI_API_KEY") || apiKey.equals("YOUR_NEW_OPEN_AI_API_KEY_HERE")) {
+        if (apiKey == null || apiKey.isBlank() || apiKey.equals("YOUR_OPENAI_API_KEY") || apiKey.equals("YOUR_NEW_OPEN_AI_API_KEY_HERE") || apiKey.equals("your-gemini-api-key")) {
             System.out.println("[AI Service] No valid API key set. Using Smart Heuristic Fallback.");
             return createFallbackResult(subject, body);
         }
@@ -121,8 +121,8 @@ public class GeminiService {
     }
 
     public String chatWithWebAgent(String userMessage, List<Map<String, String>> history) {
-        if (apiKey == null || apiKey.isBlank() || apiKey.equals("YOUR_OPENAI_API_KEY") || apiKey.equals("YOUR_NEW_OPEN_AI_API_KEY_HERE")) {
-            return "{\"type\":\"response\", \"message\":\"AI API Key is missing. I cannot process this request!\"}";
+        if (apiKey == null || apiKey.isBlank() || apiKey.equals("YOUR_OPENAI_API_KEY") || apiKey.equals("YOUR_NEW_OPEN_AI_API_KEY_HERE") || apiKey.equals("your-gemini-api-key")) {
+            return "{\"type\":\"response\", \"message\":\"AI API Key is missing. Please set GEMINI_API_KEY in application.properties or environment variables to use the AI Assistant!\"}";
         }
 
         String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" + apiKey;

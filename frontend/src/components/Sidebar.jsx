@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Mail, CheckSquare, Bell, LogOut, Settings, Zap, BarChart2, Menu, X, Sun, Moon } from 'lucide-react';
+import { Home, Inbox, CheckCircle, Bell, User, LayoutDashboard, Mail, CheckSquare, LogOut, Settings, Zap, BarChart2, Menu, X, Sun, Moon } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import './Sidebar.css';
 
@@ -124,10 +124,10 @@ const Sidebar = ({ onLogout }) => {
     };
 
     const navItems = [
-        { name: 'Dashboard',     path: '/dashboard', icon: <LayoutDashboard size={26} /> },
-        { name: 'Email Analysis', path: '/emails',    icon: <Mail size={26} /> },
-        { name: 'Auto Tasks',    path: '/tasks',     icon: <CheckSquare size={26} /> },
-        { name: 'Reminders',     path: '/reminders', icon: <Bell size={26} /> },
+        { name: 'Dashboard',     path: '/dashboard', icon: <Home size={22} strokeWidth={2.5} />, desktopIcon: <LayoutDashboard size={26} /> },
+        { name: 'Email Analysis', path: '/emails',    icon: <Inbox size={22} strokeWidth={2.5} />, desktopIcon: <Mail size={26} /> },
+        { name: 'Auto Tasks',    path: '/tasks',     icon: <CheckCircle size={22} strokeWidth={2.5} />, desktopIcon: <CheckSquare size={26} /> },
+        { name: 'Reminders',     path: '/reminders', icon: <Bell size={22} strokeWidth={2.5} />, desktopIcon: <Bell size={26} /> },
     ];
 
     const userEmail = localStorage.getItem('user_email') || 'User';
@@ -217,7 +217,8 @@ const Sidebar = ({ onLogout }) => {
                                 aria-label={item.name}
                                 onClick={() => setIsMobileMenuOpen(false)}
                             >
-                                <span className="nav-icon">{item.icon}</span>
+                                <span className="nav-icon desktop-icon">{item.desktopIcon}</span>
+                                <span className="nav-icon mobile-icon">{item.icon}</span>
                                 <span>{item.name}</span>
                             </NavLink>
                         );
@@ -234,7 +235,8 @@ const Sidebar = ({ onLogout }) => {
                                 aria-label={item.name}
                                 aria-haspopup="true"
                             >
-                                <span className="nav-icon">{item.icon}</span>
+                                <span className="nav-icon desktop-icon">{item.desktopIcon}</span>
+                                <span className="nav-icon mobile-icon">{item.icon}</span>
                                 <span>{item.name}</span>
                             </NavLink>
                             <div className="nav-dropdown-menu" role="menu">
@@ -260,7 +262,8 @@ const Sidebar = ({ onLogout }) => {
                         aria-label="Toggle Menu"
                         aria-expanded={isMobileMenuOpen}
                     >
-                        <span className="nav-icon">{isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}</span>
+                        <span className="nav-icon desktop-icon">{isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}</span>
+                        <span className="nav-icon mobile-icon"><User size={22} strokeWidth={2.5} /></span>
                         <span>Menu</span>
                     </button>
                     <button 

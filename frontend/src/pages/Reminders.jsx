@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
     Bell, RefreshCw, Clock, Mail, AlertTriangle,
-    CheckCircle, AlertCircle, Calendar, ChevronRight, X, Cpu, FileText, ExternalLink
+    CheckCircle, AlertCircle, Calendar, ChevronRight, X, Cpu, FileText, ExternalLink, Plus
 } from 'lucide-react';
 import axios from 'axios';
 import './Reminders.css';
@@ -92,7 +93,7 @@ const ReminderModal = ({ reminder, onClose }) => {
     if (!reminder) return null;
     const formatDate = (s) => s ? new Date(s).toLocaleString() : 'Unknown';
 
-    return (
+    const modalContent = (
         <div className="r-modal-overlay" onClick={onClose}>
             <div className="r-modal-panel" onClick={(e) => e.stopPropagation()}>
                 <div className="r-modal-header">
@@ -167,6 +168,8 @@ const ReminderModal = ({ reminder, onClose }) => {
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -207,9 +210,9 @@ const Reminders = () => {
     return (
         <div className="page-container reminders-page">
             {/* Header */}
-            <header className="page-header rem-flex-header">
-                <div>
-                    <h1><Bell size={28} style={{ display:'inline', marginRight:'0.5rem', color:'#818cf8' }} />Smart Reminders</h1>
+            <header className="rem-flex-header">
+                <div className="rem-header-titles">
+                    <h1><Bell size={28} color="#818cf8" /> Smart Reminders</h1>
                     <p>Deadlines automatically detected from your email content by AI scanning.</p>
                 </div>
                 <button className="btn-primary rem-refresh-btn" onClick={fetchReminders} disabled={loading}>
@@ -326,6 +329,11 @@ const Reminders = () => {
                     ))
                 )}
             </div>
+
+            {/* Floating Action Button */}
+            <button className="rem-fab" aria-label="Add Reminder">
+                <Plus size={24} />
+            </button>
 
             {/* Modal */}
             {selectedReminder && (
