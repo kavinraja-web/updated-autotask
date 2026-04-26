@@ -1,0 +1,17 @@
+{
+  "name": "Smart Task",
+  "short_name": "Smart Task",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3a6fa5",
+  "description": "Smart Task - AI powered task manager",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

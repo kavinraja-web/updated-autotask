@@ -11,7 +11,7 @@ const PRIORITY_COLORS = {
     low: '#27ae60',
 };
 
-const TaskCard = ({ task, onComplete, onDelete }) => {
+const TaskCard = ({ task, index, onComplete, onDelete }) => {
     const [isCompleting, setIsCompleting] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
     const [isChecked, setIsChecked] = useState(false);
@@ -61,9 +61,10 @@ const TaskCard = ({ task, onComplete, onDelete }) => {
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -40, filter: 'blur(3px)' }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8, filter: 'blur(3px)' }}
+            whileHover={{ scale: 1.05, zIndex: 10 }}
             transition={{ duration: 0.3 }}
             className={`task-paper-item ${isCompleted ? 'is-done' : ''} ${isCompleting ? 'is-processing' : ''}`}
         >
@@ -155,16 +156,9 @@ const AutoTaskList = () => {
     );
 
     return (
-        <div className="exam-pad-page">
-            {/* Spiral binding on the left */}
-            <div className="spiral-binding">
-                {Array.from({ length: 14 }).map((_, i) => (
-                    <div key={i} className="spiral-hole" />
-                ))}
-            </div>
-
-            {/* Ruled paper content area */}
-            <div className="pad-content">
+        <div className="exam-pad-page desk-background">
+            {/* Main content area */}
+            <div className="pad-content auto-tasks-container">
 
                 {/* Header */}
                 <header className="pad-header">
@@ -194,8 +188,8 @@ const AutoTaskList = () => {
                     {loading ? 'Loading...' : `${filteredTasks.length} task${filteredTasks.length !== 1 ? 's' : ''} pending`}
                 </div>
 
-                {/* Task items */}
-                <div className="pad-task-list">
+                {/* Task items grid */}
+                <div className="pad-task-grid">
                     <AnimatePresence>
                         {loading ? (
                             <motion.div
@@ -221,10 +215,11 @@ const AutoTaskList = () => {
                                 <p>No pending tasks — enjoy your day!</p>
                             </motion.div>
                         ) : (
-                            filteredTasks.map((task) => (
+                            filteredTasks.map((task, index) => (
                                 <TaskCard
                                     key={task.id}
                                     task={task}
+                                    index={index}
                                     onComplete={handleTaskComplete}
                                     onDelete={handleTaskDelete}
                                 />

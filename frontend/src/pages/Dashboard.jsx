@@ -52,7 +52,6 @@ const Dashboard = () => {
     const [greetingIcon, setGreetingIcon] = useState(null);
     const [userName, setUserName] = useState('');
     const [isScanning, setIsScanning] = useState(false);
-    const [showHighPriorityFocus, setShowHighPriorityFocus] = useState(false);
     const [tasks, setTasks] = useState([]);
     const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -131,13 +130,9 @@ const Dashboard = () => {
                 <StatCard title="Pending Tasks" value={stats.pendingTasks} icon={<Clock size={20} />}
                     colorClass="warning-card" trend="Need action" trendVal="-2%" delay="0.16s" />
                 <StatCard title="High Priority" value={stats.highPriorityTasks} icon={<AlertTriangle size={20} />}
-                    colorClass="danger-card" trend="Click to Focus" trendVal="+1" delay="0.24s"
-                    onClick={() => setShowHighPriorityFocus(true)} />
+                    colorClass="danger-card" trend="Urgent tasks" trendVal="+1" delay="0.24s" />
             </div>
 
-
-
-            {showHighPriorityFocus && <HighPriorityFocus onClose={() => setShowHighPriorityFocus(false)} />}
         </div>
     );
 };

@@ -12,54 +12,14 @@
     font-family: 'Caveat', cursive;
 }
 
-/* ---- Spiral Binding (Left side) ---- */
-.spiral-binding {
-    width: 52px;
-    min-height: 100%;
-    background: linear-gradient(180deg, #2a2a2a, #3a3a3a);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 3rem 0;
-    gap: 2.5rem;
-    position: sticky;
-    top: 0;
-    flex-shrink: 0;
-    z-index: 20;
-    box-shadow: 4px 0 16px rgba(0,0,0,0.35);
-}
-
-.spiral-hole {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: #d6cfc4;
-    border: 3px solid #555;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.4), 0 1px 3px rgba(255,255,255,0.05);
-    position: relative;
-}
-
-.spiral-hole::after {
-    content: '';
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 9px; height: 9px;
-    border-radius: 50%;
-    background: #2a2a2a;
-}
-
 /* ---- Main Paper Area ---- */
-.pad-content {
+.pad-content.auto-tasks-container {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #fffef5;
+    background: transparent;
     position: relative;
     padding: 2rem 3rem 0 3rem;
-    background-image:
-        linear-gradient(90deg, transparent 84px, #f08080 84px, #f08080 86px, transparent 86px);
-    background-size: 100% 100%;
     overflow-y: auto;
 }
 
@@ -70,8 +30,7 @@
     align-items: center;
     margin-bottom: 1.5rem;
     padding-bottom: 0.5rem;
-    padding-left: 96px;
-    border-bottom: 2.5px solid #3a6fa5;
+    border-bottom: 2.5px dashed #8a6f4a;
 }
 
 .pad-title-area {
@@ -137,8 +96,7 @@
     font-family: 'Caveat', cursive;
     font-size: 1.05rem;
     color: #8a6f4a;
-    padding-left: 96px;
-    margin-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
     font-style: italic;
     display: flex;
     align-items: center;
@@ -146,51 +104,48 @@
 }
 
 /* ---- Task List ---- */
-.pad-task-list {
-    padding-left: 96px;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
+.pad-task-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2.5rem;
     padding-bottom: 4rem;
-    background-image: repeating-linear-gradient(
-        transparent,
-        transparent 38.5px,
-        #a8c8e8 38.5px,
-        #a8c8e8 40px
-    );
-    background-size: 100% 40px;
-    background-position: 0 0;
 }
 
 /* ---- Individual Task Item ---- */
 .task-paper-item {
-    position: relative;
-    min-height: 80px;
-    display: flex;
-    align-items: flex-start;
-    border-bottom: none;
-    transition: background-color 0.2s ease;
     background-color: #fffef5;
-    background-image: repeating-linear-gradient(
-        transparent,
-        transparent 38.5px,
-        #a8c8e8 38.5px,
-        #a8c8e8 40px
-    );
-    background-size: 100% 40px;
+    background-image:
+        linear-gradient(90deg, transparent 40px, #f08080 40px, #f08080 42px, transparent 42px),
+        repeating-linear-gradient(transparent, transparent 38.5px, #a8c8e8 38.5px, #a8c8e8 40px);
+    background-size: 100% 100%, 100% 40px;
     background-position: 0 0;
-    padding-top: 6px;
-    padding-bottom: 6px;
+    
+    -webkit-mask-image: radial-gradient(circle at -2px 20px, transparent 6px, black 7px);
+    -webkit-mask-size: 100% 40px;
+    mask-image: radial-gradient(circle at -2px 20px, transparent 6px, black 7px);
+    mask-size: 100% 40px;
+
+    filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.15));
+    border-radius: 0 6px 6px 0;
+    
+    padding: 8px 1rem 8px 50px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    transition: transform 0.2s ease, filter 0.2s ease;
+    cursor: default;
 }
 
 .task-paper-item:hover {
-    background-color: #ffffe4;
-    border-radius: 4px;
+    filter: drop-shadow(4px 8px 12px rgba(0,0,0,0.2));
 }
 
 .paper-item-inner {
     width: 100%;
-    padding: 0.6rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 /* Checkbox Row */
@@ -198,7 +153,7 @@
     display: flex;
     align-items: flex-start;
     gap: 0.85rem;
-    margin-bottom: 0.7rem;
+    margin-bottom: 0;
 }
 
 /* Exam-style square checkbox */
@@ -216,7 +171,7 @@
     font-size: 1.1rem;
     color: #1a5c1a;
     flex-shrink: 0;
-    margin-top: 4px;
+    margin-top: 9px;
     transition: all 0.2s;
     font-weight: 700;
 }
@@ -235,11 +190,11 @@
 /* Task Title */
 .paper-task-title {
     font-family: 'Caveat', cursive;
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     font-weight: 600;
     color: #1a2744;
     margin: 0;
-    line-height: 1.35;
+    line-height: 40px;
     flex: 1;
     transition: all 0.3s;
 }
@@ -262,6 +217,7 @@
     opacity: 0;
     display: flex;
     align-items: center;
+    margin-top: 8px;
 }
 
 .task-paper-item:hover .paper-del-btn { opacity: 1; }
@@ -272,10 +228,12 @@
     display: flex;
     align-items: center;
     gap: 1.2rem;
-    padding-left: 30px;
+    padding-left: 0;
+    margin-top: 0;
     font-family: 'Caveat', cursive;
     font-size: 1rem;
     flex-wrap: wrap;
+    line-height: 40px;
 }
 
 .paper-priority-tag {
@@ -332,7 +290,7 @@
     text-align: center;
     padding: 5rem 2rem;
     font-family: 'Caveat', cursive;
-    padding-left: 0;
+    grid-column: 1 / -1;
 }
 
 .empty-checkmark {
@@ -374,25 +332,20 @@
 
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
-    .spiral-binding { width: 36px; gap: 2rem; padding: 2rem 0; }
-    .spiral-hole { width: 18px; height: 18px; }
-    .spiral-hole::after { width: 6px; height: 6px; }
-
-    .pad-content {
+    .pad-content.auto-tasks-container {
         padding: 1.5rem 1.2rem 0 1.2rem;
-        background-image:
-            linear-gradient(90deg, transparent 64px, #f08080 64px, #f08080 66px, transparent 66px);
     }
 
     .pad-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.8rem;
-        padding-left: 72px;
     }
 
-    .task-counter-line,
-    .pad-task-list { padding-left: 72px; }
     .pad-search { width: 100%; }
     .pad-title { font-size: 1.9rem; }
+    
+    .pad-task-grid {
+        grid-template-columns: 1fr;
+    }
 }
