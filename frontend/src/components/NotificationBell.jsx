@@ -58,7 +58,11 @@ const NotificationBell = () => {
 
         const client = new Client({
             // Assuming your backend runs on port 8081 locally
-            webSocketFactory: () => new SockJS(`${import.meta.env.VITE_API_URL || 'http://localhost:8081'}/ws-live-updates`),
+            webSocketFactory: () => new SockJS(
+                import.meta.env.VITE_API_URL 
+                    ? `${import.meta.env.VITE_API_URL}/ws-live-updates` 
+                    : '/ws-live-updates'
+            ),
             debug: function (str) {
               // console.log(str);
             },
@@ -72,6 +76,21 @@ const NotificationBell = () => {
                 const newNotif = JSON.parse(msg.body);
                 setNotifications(prev => [newNotif, ...prev]);
                 setUnreadCount(prev => prev + 1);
+                
+                // Trigger native browser notification if permitted
+                if (Notification.permission === 'granted') {
+                    try {
+                        const title = newNotif.type === 'TASK_UPDATE' ? 'Task Updated' : 
+                                      newNotif.type === 'REMINDER' ? 'Upcoming Reminder' : 'SmartTask AI';
+                        new Notification(title, {
+                            body: newNotif.message,
+                            icon: '/favicon.ico',
+                            tag: 'smart-task-' + newNotif.id
+                        });
+                    } catch (e) {
+                        console.warn("Native notification failed", e);
+                    }
+                }
             });
         };
 

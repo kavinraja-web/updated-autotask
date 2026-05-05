@@ -7,7 +7,7 @@
   gap: 24px;
   position: relative;
   min-height: 100vh;
-  padding-bottom: 140px;
+  padding-bottom: 40px;
   box-sizing: border-box;
   overflow-x: hidden;
   width: 100%;
@@ -400,10 +400,7 @@ body.dark-mode .rem-flex-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-top: 12px;
-  margin-top: 4px;
-  border-top: 1px dashed var(--border);
-  width: 100%;
+  flex-shrink: 0;
 }
 
 .cd-overdue { font-size: 0.875rem; font-weight: 700; color: #ef4444; }
@@ -691,7 +688,7 @@ body.dark-mode .rem-flex-header {
 @media (max-width: 1024px) {
   .reminders-page {
     padding: 20px;
-    padding-bottom: 140px;
+    padding-bottom: 40px;
   }
 }
 
@@ -700,7 +697,7 @@ body.dark-mode .rem-flex-header {
   .reminders-page {
     padding: 16px;
     gap: 16px;
-    padding-bottom: 160px;
+    padding-bottom: 40px;
   }
 
   .rem-flex-header {
@@ -739,6 +736,14 @@ body.dark-mode .rem-flex-header {
     flex-direction: column;
     align-items: flex-start;
     width: 100%;
+  }
+
+  .rem-row-countdown {
+    width: 100%;
+    padding-top: 12px;
+    margin-top: 4px;
+    border-top: 1px dashed var(--border);
+    justify-content: space-between;
   }
 
   .rem-row-content {

@@ -20,8 +20,13 @@ spring.security.oauth2.client.registration.google.client-id=${GOOGLE_CLIENT_ID:y
 spring.security.oauth2.client.registration.google.client-secret=${GOOGLE_CLIENT_SECRET:your-client-secret}
 spring.security.oauth2.client.registration.google.scope=openid,profile,email,https://www.googleapis.com/auth/gmail.readonly,https://www.googleapis.com/auth/gmail.send
 
-# --- Gemini AI ---
-gemini.api.key=${GEMINI_API_KEY:your-gemini-api-key}
+# --- Gemini AI (3 separate keys for different features) ---
+# Key 1: Voice Assistant
+gemini.api.key.voice=${GEMINI_API_KEY_VOICE:your-gemini-voice-api-key}
+# Key 2: Chatbot / Web Agent
+gemini.api.key.chat=${GEMINI_API_KEY_CHAT:your-gemini-chat-api-key}
+# Key 3: Task Generation & Reminder Analysis
+gemini.api.key.task=${GEMINI_API_KEY_TASK:your-gemini-task-api-key}
 
 # --- CORS Frontend URL ---
 frontend.url=${FRONTEND_URL:http://localhost:5173}

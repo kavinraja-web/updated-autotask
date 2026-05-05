@@ -309,13 +309,13 @@ const Reminders = () => {
                             {/* Content */}
                             <div className="rem-row-content">
                                 <div className="rem-row-top">
-                                    <h4 className="rem-subject">{rem.subject}</h4>
+                                    <h4 className="rem-subject">{(rem.subject && rem.subject.trim()) || '(No Subject)'}</h4>
                                     <UrgencyBadge urgency={rem.urgency} />
                                 </div>
-                                <p className="rem-snippet">{rem.snippet}</p>
+                                <p className="rem-snippet">{(rem.snippet && rem.snippet.trim()) || 'No preview available.'}</p>
                                 <div className="rem-row-meta">
-                                    <span><Mail size={12} /> {rem.sender}</span>
-                                    <span><Calendar size={12} /> Deadline: <strong>{rem.deadlineText}</strong> ({formatDate(rem.deadlineDate)})</span>
+                                    <span><Mail size={12} /> {(rem.sender && rem.sender.trim()) || 'Unknown Sender'}</span>
+                                    <span><Calendar size={12} /> Deadline: <strong>{(rem.deadlineText && rem.deadlineText.trim()) || 'Detected Deadline'}</strong> ({formatDate(rem.deadlineDate)})</span>
                                 </div>
                             </div>
 
@@ -330,10 +330,7 @@ const Reminders = () => {
                 )}
             </div>
 
-            {/* Floating Action Button */}
-            <button className="rem-fab" aria-label="Add Reminder">
-                <Plus size={24} />
-            </button>
+
 
             {/* Modal */}
             {selectedReminder && (

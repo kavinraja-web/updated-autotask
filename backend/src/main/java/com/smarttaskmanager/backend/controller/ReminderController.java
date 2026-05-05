@@ -42,25 +42,38 @@ public class ReminderController {
         LocalDate today = LocalDate.now();
 
         for (EmailLog email : emails) {
-            String combined = buildSearchText(email);
-            List<DeadlineMatch> matches = extractDeadlines(combined, today);
+            LocalDate deadlineDate = null;
+            String deadlineText = null;
 
-            for (DeadlineMatch match : matches) {
+            // Priority 1: use AI-extracted deadline if available
+            if (email.getAiDeadline() != null) {
+                deadlineDate = email.getAiDeadline().toLocalDate();
+                deadlineText = "AI Detected Deadline";
+            } else {
+                // Priority 2: fall back to regex extraction from subject + snippet + body
+                String searchText = buildSearchText(email);
+                List<DeadlineMatch> matches = extractDeadlines(searchText, today);
+                if (!matches.isEmpty()) {
+                    deadlineDate = matches.get(0).date;
+                    deadlineText = "Detected: \"" + matches.get(0).rawText + "\"";
+                }
+            }
+
+            if (deadlineDate != null) {
                 Map<String, Object> reminder = new LinkedHashMap<>();
                 reminder.put("emailId", email.getId());
                 reminder.put("messageId", email.getMessageId());
-                reminder.put("subject", email.getSubject());
+                reminder.put("subject", email.getSubject() != null ? email.getSubject() : "(No Subject)");
                 reminder.put("sender", email.getSender() != null ? email.getSender() : "Unknown Sender");
-                reminder.put("snippet", email.getSnippet());
+                reminder.put("snippet", email.getSnippet() != null ? email.getSnippet() : "No summary available.");
                 reminder.put("body", email.getBody());
                 reminder.put("processedAt", email.getProcessedAt() != null ? email.getProcessedAt().toString() : null);
-                reminder.put("deadlineText", match.rawText);
-                reminder.put("deadlineDate", match.date.toString());
+                reminder.put("deadlineText", deadlineText);
+                reminder.put("deadlineDate", deadlineDate.toString());
                 reminder.put("daysUntil", (int) Duration.between(
-                        today.atStartOfDay(), match.date.atStartOfDay()).toDays());
-                reminder.put("urgency", classifyUrgency(match.date, today));
+                        today.atStartOfDay(), deadlineDate.atStartOfDay()).toDays());
+                reminder.put("urgency", classifyUrgency(deadlineDate, today));
                 reminders.add(reminder);
-                break; // one reminder per email (the earliest deadline found)
             }
         }
 

@@ -109,7 +109,7 @@ public class TaskAutomationScheduler {
 
         for (EmailLog emailLog : pendingEmails) {
             try {
-                Thread.sleep(1500); // Respect Gemini free-tier rate limits
+                Thread.sleep(3500); // Respect OpenRouter free-tier rate limits (20 req/min)
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
@@ -120,13 +120,22 @@ public class TaskAutomationScheduler {
                         emailLog.getSubject(), emailLog.getBody(), false);
 
                 if (result != null) {
+                    if (result.getDeadline() != null && !result.getDeadline().isBlank() && !result.getDeadline().equalsIgnoreCase("null")) {
+                        try {
+                            emailLog.setAiDeadline(LocalDateTime.parse(result.getDeadline()));
+                        } catch (Exception ex) {
+                            System.out.println("[AI Analyzer] Failed to parse deadline '" + result.getDeadline() + "' for: " + emailLog.getSubject());
+                        }
+                    }
+
                     if ("task".equalsIgnoreCase(result.getAction())) {
                         Task task = new Task();
                         task.setTitle("Review: " + emailLog.getSubject());
-                        task.setPriority("Medium");
+                        task.setPriority(result.getPriority() != null ? result.getPriority() : "Medium");
                         task.setEmailSource(emailLog.getSubject());
+                        task.setDescription(result.getSummary() != null ? result.getSummary() : emailLog.getSnippet());
                         task.setUser(user);
-                        task.setDeadline(LocalDateTime.now().plusDays(1));
+                        task.setDeadline(emailLog.getAiDeadline() != null ? emailLog.getAiDeadline() : LocalDateTime.now().plusDays(1));
                         taskRepository.save(task);
                         notificationService.createAndSendNotification(
                                 user, "New Task Auto-Generated: Review " + emailLog.getSubject(), "TASK_UPDATE");

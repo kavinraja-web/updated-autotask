@@ -107,4 +107,28 @@ public class AgentController {
         String responseJson = geminiService.chatWithWebAgent(userMessage, history);
         return ResponseEntity.ok(responseJson);
     }
+
+    @PostMapping("/generate-reply")
+    public ResponseEntity<Map<String, String>> generateReply(@RequestBody Map<String, String> payload) {
+        String subject = payload.get("subject");
+        String body = payload.get("body");
+        String reply = geminiService.generateEmailReply(subject, body);
+        return ResponseEntity.ok(Map.of("reply", reply));
+    }
+
+    @PostMapping("/voice-chat")
+    public ResponseEntity<String> chatWithVoiceAgent(@RequestBody Map<String, Object> payload) {
+        String userMessage = (String) payload.get("message");
+        if (userMessage == null || userMessage.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("{\"type\":\"response\", \"message\":\"Please provide a message.\"}");
+        }
+
+        List<Map<String, String>> history = null;
+        if (payload.containsKey("history")) {
+            history = (List<Map<String, String>>) payload.get("history");
+        }
+
+        String responseJson = geminiService.chatWithVoiceAgent(userMessage, history);
+        return ResponseEntity.ok(responseJson);
+    }
 }

@@ -15,6 +15,7 @@ import Reminders from './pages/Reminders';
 import Login from './pages/Login';
 import ProductivityTrends from './pages/ProductivityTrends';
 import AiInsights from './pages/AiInsights';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -88,9 +89,17 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard/trends" element={<ProductivityTrends />} />
           <Route path="/dashboard/insights" element={<AiInsights />} />
-          <Route path="/emails" element={<EmailAnalysis />} />
+          <Route path="/emails" element={
+            <ErrorBoundary>
+              <EmailAnalysis />
+            </ErrorBoundary>
+          } />
           <Route path="/tasks" element={<AutoTaskList />} />
-          <Route path="/reminders" element={<Reminders />} />
+          <Route path="/reminders" element={
+            <ErrorBoundary>
+              <Reminders />
+            </ErrorBoundary>
+          } />
         </Routes>
       </Layout>
     </Router>

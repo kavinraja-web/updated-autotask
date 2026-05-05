@@ -542,7 +542,8 @@
     background: transparent !important;
     box-shadow: none !important;
     border: none !important;
-    height: 0;
+    height: 100vh;
+    height: 100dvh;
     padding: 0;
     pointer-events: none;
     backdrop-filter: none !important;
@@ -984,19 +985,6 @@
     margin-bottom: 1rem;
   }
 
-  /* Fix for NotificationBell inside the white mobile menu */
-  .mobile-collapsible-menu .notification-bell-btn {
-    background: rgba(124, 58, 237, 0.1);
-    border: 1.5px solid rgba(124, 58, 237, 0.2);
-    color: var(--purple-d, #4c1d95);
-  }
-
-  .mobile-collapsible-menu .notification-bell-btn:hover {
-    background: rgba(124, 58, 237, 0.15);
-    border-color: rgba(124, 58, 237, 0.3);
-    color: var(--purple, #6D28D9);
-  }
-
   .mobile-menu-actions {
     display: flex;
     flex-direction: column;
@@ -1009,7 +997,7 @@
     gap: 10px;
     padding: 0.8rem 1rem;
     border-radius: 12px;
-    background: rgba(3, 255, 175, 0.896);
+    background: rgba(95, 3, 255, 0.249);
     border: none;
     color: var(--text);
     font-size: 0.85rem;

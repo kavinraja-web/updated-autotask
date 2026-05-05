@@ -110,7 +110,7 @@ const VoiceAssistant = ({ isPanelOpen, onClose }) => {
                     role: m.role === 'user' ? 'user' : 'bot',
                     content: m.text || JSON.stringify(m.data)
                 }));
-                const res = await axios.post('/api/agent/chat', { message: text, history: chatHistory });
+                const res = await axios.post('/api/agent/voice-chat', { message: text, history: chatHistory });
                 let agentData;
                 try {
                     agentData = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;

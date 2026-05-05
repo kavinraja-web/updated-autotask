@@ -46,7 +46,7 @@ public class GmailService {
             // "recent")
             ListMessagesResponse response = gmail.users().messages()
                     .list("me")
-                    .setQ("newer_than:2d -label:spam -label:trash")
+                    .setQ("newer_than:2d in:inbox -label:spam -label:trash")
                     .setMaxResults(500L)
                     .execute();
 

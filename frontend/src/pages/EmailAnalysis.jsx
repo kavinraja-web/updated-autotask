@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Mail, RefreshCw, Cpu, X, FileText, ChevronRight, ExternalLink, Clock, CheckCircle, MinusCircle } from 'lucide-react';
+import { Mail, RefreshCw, Cpu, X, FileText, ChevronRight, ExternalLink, Clock, CheckCircle, MinusCircle, MessageSquare } from 'lucide-react';
 import axios from 'axios';
 import './EmailAnalysis.css';
 
@@ -20,6 +20,10 @@ const EmailAnalysis = () => {
     const [selectedEmail, setSelectedEmail] = useState(null);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailError, setDetailError]   = useState(null);
+    const [aiReplyDraft, setAiReplyDraft] = useState('');
+    const [isGeneratingReply, setIsGeneratingReply] = useState(false);
+    const [isSending, setIsSending] = useState(false);
+    const [sendSuccess, setSendSuccess] = useState(false);
 
     // ─── Fetch stored emails from DB ────────────────────────────────────────────
     const fetchEmails = useCallback(() => {
@@ -123,7 +127,54 @@ const EmailAnalysis = () => {
         setSelectedEmail(null);
         setDetailLoading(false);
         setDetailError(null);
+        setAiReplyDraft('');
+        setIsGeneratingReply(false);
         document.body.style.overflow = '';
+    };
+
+    const handleGenerateReply = () => {
+        if (!selectedEmail) return;
+        setIsGeneratingReply(true);
+        setSendSuccess(false);
+        axios.post('/api/agent/generate-reply', {
+            subject: selectedEmail.subject,
+            body: selectedEmail.body || selectedEmail.snippet || ''
+        }).then(res => {
+            setAiReplyDraft(res.data.reply);
+        }).catch(err => {
+            console.error('Failed to generate reply:', err);
+            setAiReplyDraft('Failed to generate reply. Please try again.');
+        }).finally(() => {
+            setIsGeneratingReply(false);
+        });
+    };
+
+    const handleSendDirectly = () => {
+        if (!selectedEmail || !aiReplyDraft) return;
+        setIsSending(true);
+        setSendSuccess(false);
+        axios.post('/api/agent/execute', {
+            action: 'send_email',
+            data: {
+                to: extractEmailAddress(selectedEmail.sender),
+                subject: `Re: ${selectedEmail.subject.replace(/^Re:\s*/i, '')}`,
+                body: aiReplyDraft
+            }
+        }).then(res => {
+            setSendSuccess(true);
+            setTimeout(() => setSendSuccess(false), 3000);
+        }).catch(err => {
+            console.error('Failed to send email:', err);
+            alert('Failed to send email. Ensure you are logged in.');
+        }).finally(() => {
+            setIsSending(false);
+        });
+    };
+
+    const extractEmailAddress = (senderStr) => {
+        if (!senderStr) return '';
+        const match = senderStr.match(/<(.+)>/);
+        return match ? match[1] : senderStr;
     };
 
     const formatDate = dateStr => {
@@ -316,10 +367,72 @@ const EmailAnalysis = () => {
                                             <Cpu size={14} />
                                             AI Summary &amp; Analysis
                                         </div>
-                                        <div className="modal-snippet">{selectedEmail.snippet}</div>
+                                    <div className="modal-snippet">{selectedEmail.snippet}</div>
+                                </div>
+                            )}
+
+                            {/* AI Reply Section */}
+                            <div className="modal-section reply-section" style={{ background: 'rgba(124, 58, 237, 0.05)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(124, 58, 237, 0.2)' }}>
+                                <div className="section-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '12px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <MessageSquare size={14} color="var(--purple)" />
+                                        <span style={{ color: 'var(--purple)' }}>AI Reply Assistant</span>
+                                    </div>
+                                    {!aiReplyDraft && (
+                                        <button 
+                                            onClick={handleGenerateReply}
+                                            disabled={isGeneratingReply}
+                                            style={{
+                                                background: 'var(--purple)', color: 'white', border: 'none',
+                                                padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem',
+                                                cursor: isGeneratingReply ? 'not-allowed' : 'pointer',
+                                                display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold'
+                                            }}
+                                        >
+                                            {isGeneratingReply ? <RefreshCw size={12} className="spin" /> : <Cpu size={12} />}
+                                            {isGeneratingReply ? 'Generating...' : 'Reply with AI'}
+                                        </button>
+                                    )}
+                                </div>
+                                
+                                {aiReplyDraft && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        <textarea 
+                                            value={aiReplyDraft}
+                                            onChange={(e) => setAiReplyDraft(e.target.value)}
+                                            style={{ 
+                                                width: '100%', minHeight: '120px', padding: '12px', 
+                                                borderRadius: '8px', border: '1px solid var(--border)',
+                                                background: 'var(--bg-card)', color: 'var(--text)',
+                                                fontFamily: 'inherit', fontSize: '0.9rem', resize: 'vertical'
+                                            }}
+                                        />
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                            <button 
+                                                onClick={() => setAiReplyDraft('')}
+                                                style={{ background: 'transparent', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '6px', color: 'var(--text-2)', cursor: 'pointer' }}
+                                            >
+                                                Discard
+                                            </button>
+                                            <a 
+                                                href={`mailto:${extractEmailAddress(selectedEmail.sender)}?subject=Re: ${encodeURIComponent(selectedEmail.subject)}&body=${encodeURIComponent(aiReplyDraft)}`}
+                                                style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text)', textDecoration: 'none', padding: '6px 16px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: '600' }}
+                                            >
+                                                Draft in Gmail
+                                            </a>
+                                            <button 
+                                                onClick={handleSendDirectly}
+                                                disabled={isSending || sendSuccess}
+                                                style={{ background: sendSuccess ? '#10b981' : 'var(--purple)', color: 'white', border: 'none', padding: '6px 16px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: '600', cursor: (isSending || sendSuccess) ? 'default' : 'pointer', transition: 'all 0.2s' }}
+                                            >
+                                                {isSending ? 'Sending...' : sendSuccess ? 'Sent!' : 'Send Reply Directly'}
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
-                                <div className="modal-section full-content-section">
+                            </div>
+
+                            <div className="modal-section full-content-section">
                                     <div className="section-label">
                                         <FileText size={14} />
                                         Original Email Body

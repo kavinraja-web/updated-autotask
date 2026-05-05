@@ -34,6 +34,9 @@ public class EmailLog {
     @Column(name = "ai_status", nullable = false)
     private AiStatus aiStatus = AiStatus.PENDING;
 
+    @Column(name = "ai_deadline")
+    private LocalDateTime aiDeadline;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
@@ -109,6 +112,14 @@ public class EmailLog {
 
     public void setAiStatus(AiStatus aiStatus) {
         this.aiStatus = aiStatus;
+    }
+
+    public LocalDateTime getAiDeadline() {
+        return aiDeadline;
+    }
+
+    public void setAiDeadline(LocalDateTime aiDeadline) {
+        this.aiDeadline = aiDeadline;
     }
 }
 

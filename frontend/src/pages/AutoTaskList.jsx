@@ -15,8 +15,10 @@ const TaskCard = ({ task, index, onComplete, onDelete }) => {
     const [isCompleting, setIsCompleting] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
     const [isChecked, setIsChecked] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
-    const handleCompleteClick = async () => {
+    const handleCompleteClick = async (e) => {
+        e.stopPropagation();
         if (isCompleting || isCompleted) return;
         setIsChecked(true);
         setIsCompleting(true);
@@ -42,7 +44,8 @@ const TaskCard = ({ task, index, onComplete, onDelete }) => {
         }, 700);
     };
 
-    const handleDeleteClick = () => {
+    const handleDeleteClick = (e) => {
+        e.stopPropagation();
         setIsCompleting(true);
         onDelete(task.id);
     };
@@ -78,7 +81,7 @@ const TaskCard = ({ task, index, onComplete, onDelete }) => {
                     <div className="stamp-inner">✓ Done!</div>
                 </motion.div>
             ) : (
-                <div className="paper-item-inner">
+                <div className="paper-item-inner" onClick={() => setIsExpanded(!isExpanded)}>
                     <div className="paper-checkbox-row">
                         <button
                             className={`paper-checkbox ${isChecked ? 'checked' : ''}`}
@@ -110,13 +113,44 @@ const TaskCard = ({ task, index, onComplete, onDelete }) => {
                             ★ {task.priority || 'Medium'}
                         </span>
                         {task.emailSource && (
-                            <span className="paper-source">from: {task.emailSource}</span>
+                            <span className="paper-source" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
+                                from: {task.emailSource}
+                            </span>
                         )}
                         <span className="paper-date">
                             <Calendar size={12} />
                             {formatDeadline(task.deadline)}
                         </span>
                     </div>
+
+                    <AnimatePresence>
+                        {isExpanded && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                                animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+                                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                                style={{ overflow: 'hidden' }}
+                                className="paper-details-section"
+                            >
+                                <div style={{ background: 'rgba(0,0,0,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.05)', fontSize: '0.9rem', color: '#4a5568', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <div>
+                                        <strong style={{ color: '#2d3748', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email Summary</strong>
+                                        <p style={{ margin: '4px 0 0 0', lineHeight: '1.5' }}>{task.description || "No summary available."}</p>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '16px', marginTop: '4px' }}>
+                                        <div>
+                                            <strong style={{ color: '#2d3748', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Deadline</strong>
+                                            <div style={{ color: '#e53e3e', fontWeight: 'bold' }}>{formatDeadline(task.deadline)}</div>
+                                        </div>
+                                        <div>
+                                            <strong style={{ color: '#2d3748', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Importance</strong>
+                                            <div style={{ color: priorityColor, fontWeight: 'bold' }}>{task.priority || 'Medium'}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             )}
         </motion.div>
