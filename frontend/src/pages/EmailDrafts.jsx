@@ -104,6 +104,15 @@ const EmailDrafts = () => {
                                 </div>
                             </div>
 
+                            <div className="draft-body-preview original-email">
+                                <div className="reply-label">
+                                    <Mail size={14} /> Original Email
+                                </div>
+                                <div className="reply-content">
+                                    {draft.originalEmailText || '(No original text provided)'}
+                                </div>
+                            </div>
+
                             <div className="draft-body-preview">
                                 <div className="reply-label">
                                     <MessageSquare size={14} /> Generated Reply

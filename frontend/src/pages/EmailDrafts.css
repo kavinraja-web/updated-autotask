@@ -101,6 +101,16 @@
     margin-bottom: 1.25rem;
 }
 
+.draft-body-preview.original-email {
+    background: var(--bg-input);
+    border-color: var(--border);
+    margin-bottom: 0.75rem;
+}
+
+.draft-body-preview.original-email .reply-label {
+    color: var(--text-2);
+}
+
 .reply-label {
     display: flex;
     align-items: center;

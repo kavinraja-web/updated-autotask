@@ -54,6 +54,7 @@ public class EmailDraftController {
         private String threadId;
         private String sender;
         private String subject;
+        private String originalEmailText;
         private String generatedReply;
         private String replyWebhookUrl;
 
@@ -71,6 +72,9 @@ public class EmailDraftController {
 
         public String getSubject() { return subject; }
         public void setSubject(String subject) { this.subject = subject; }
+
+        public String getOriginalEmailText() { return originalEmailText; }
+        public void setOriginalEmailText(String originalEmailText) { this.originalEmailText = originalEmailText; }
 
         public String getGeneratedReply() { return generatedReply; }
         public void setGeneratedReply(String generatedReply) { this.generatedReply = generatedReply; }
@@ -90,6 +94,7 @@ public class EmailDraftController {
             draft.setThreadId(payload.getThreadId());
             draft.setSender(payload.getSender());
             draft.setSubject(payload.getSubject());
+            draft.setOriginalEmailText(payload.getOriginalEmailText());
             draft.setGeneratedReply(payload.getGeneratedReply());
             draft.setReplyWebhookUrl(payload.getReplyWebhookUrl());
             draft.setStatus(EmailDraft.Status.PENDING);

@@ -24,6 +24,9 @@ public class EmailDraft {
     private String subject;
 
     @Column(columnDefinition = "TEXT")
+    private String originalEmailText;
+
+    @Column(columnDefinition = "TEXT")
     private String generatedReply;
 
     private String replyWebhookUrl;
@@ -76,6 +79,14 @@ public class EmailDraft {
 
     public void setSubject(String subject) {
         this.subject = subject;
+    }
+
+    public String getOriginalEmailText() {
+        return originalEmailText;
+    }
+
+    public void setOriginalEmailText(String originalEmailText) {
+        this.originalEmailText = originalEmailText;
     }
 
     public String getGeneratedReply() {

@@ -740,7 +740,7 @@
   .sidebar-nav {
     pointer-events: auto;
     position: fixed;
-    bottom: 20px;
+    bottom: 40px; /* Increased from 20px to prevent overlay with system nav */
     /* Floating */
     left: 50%;
     transform: translateX(-50%);
