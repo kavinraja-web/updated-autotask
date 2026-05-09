@@ -144,16 +144,16 @@
 
 .btn-reject {
     background: transparent;
-    color: var(--danger);
-    border: 1px solid var(--danger);
+    color: #DC2626;
+    border: 1px solid #DC2626;
 }
 
 .btn-reject:hover:not(:disabled) {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(220, 38, 38, 0.1);
 }
 
 .btn-approve {
-    background: var(--success);
+    background: var(--green);
     color: white;
 }
 
