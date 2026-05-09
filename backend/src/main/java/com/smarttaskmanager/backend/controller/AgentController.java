@@ -35,6 +35,7 @@ public class AgentController {
     private NotificationService notificationService;
 
     @PostMapping("/execute")
+    @SuppressWarnings("unchecked")
     public ResponseEntity<String> executeAction(@RequestBody Map<String, Object> payload) {
         String action = (String) payload.get("action");
         Map<String, String> data = (Map<String, String>) payload.get("data");
@@ -93,6 +94,7 @@ public class AgentController {
     }
 
     @PostMapping("/chat")
+    @SuppressWarnings("unchecked")
     public ResponseEntity<String> chatWithAgent(@RequestBody Map<String, Object> payload) {
         String userMessage = (String) payload.get("message");
         if (userMessage == null || userMessage.trim().isEmpty()) {
@@ -117,6 +119,7 @@ public class AgentController {
     }
 
     @PostMapping("/voice-chat")
+    @SuppressWarnings("unchecked")
     public ResponseEntity<String> chatWithVoiceAgent(@RequestBody Map<String, Object> payload) {
         String userMessage = (String) payload.get("message");
         if (userMessage == null || userMessage.trim().isEmpty()) {

@@ -36,9 +36,24 @@ const AgentWidget = ({ isPanelOpen, onClose }) => {
       let agentResponse;
       
       try {
-        agentResponse = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+        let rawData = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+        
+        // Extract JSON block if surrounded by other text (e.g., <status> tags or markdown)
+        const firstBrace = rawData.indexOf('{');
+        const lastBrace = rawData.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          rawData = rawData.substring(firstBrace, lastBrace + 1);
+        }
+
+        // Fix common JSON formatting issues from free LLMs
+        rawData = rawData.replace(/}\s*"/g, '}, "');
+        rawData = rawData.replace(/"\s*}/g, '"}');
+        rawData = rawData.replace(/,\s*}/g, '}');
+        rawData = rawData.replace(/,\s*]/g, ']');
+        
+        agentResponse = JSON.parse(rawData);
       } catch(e) {
-        agentResponse = { type: 'response', message: res.data };
+        agentResponse = { type: 'response', message: typeof res.data === 'string' ? res.data : JSON.stringify(res.data) };
       }
       
       setMessages(prev => [...prev, { type: 'bot', content: agentResponse }]);

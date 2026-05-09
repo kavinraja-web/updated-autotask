@@ -126,7 +126,8 @@ const Sidebar = ({ onLogout }) => {
     const navItems = [
         { name: 'Dashboard',     path: '/dashboard', icon: <Home size={22} strokeWidth={2.5} />, desktopIcon: <LayoutDashboard size={26} /> },
         { name: 'Email Analysis', path: '/emails',    icon: <Inbox size={22} strokeWidth={2.5} />, desktopIcon: <Mail size={26} /> },
-        { name: 'Auto Tasks',    path: '/tasks',     icon: <CheckCircle size={22} strokeWidth={2.5} />, desktopIcon: <CheckSquare size={26} /> },
+        { name: 'Approvals',      path: '/drafts',    icon: <CheckSquare size={22} strokeWidth={2.5} />, desktopIcon: <CheckSquare size={26} /> },
+        { name: 'Auto Tasks',    path: '/tasks',     icon: <CheckCircle size={22} strokeWidth={2.5} />, desktopIcon: <CheckCircle size={26} /> },
         { name: 'Reminders',     path: '/reminders', icon: <Bell size={22} strokeWidth={2.5} />, desktopIcon: <Bell size={26} /> },
     ];
 

@@ -6,7 +6,6 @@ import com.smarttaskmanager.backend.repository.EmailLogRepository;
 import com.smarttaskmanager.backend.repository.UserRepository;
 import com.smarttaskmanager.backend.service.TaskAutomationScheduler;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

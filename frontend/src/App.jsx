@@ -15,6 +15,7 @@ import Reminders from './pages/Reminders';
 import Login from './pages/Login';
 import ProductivityTrends from './pages/ProductivityTrends';
 import AiInsights from './pages/AiInsights';
+import EmailDrafts from './pages/EmailDrafts';
 import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
@@ -92,6 +93,11 @@ function App() {
           <Route path="/emails" element={
             <ErrorBoundary>
               <EmailAnalysis />
+            </ErrorBoundary>
+          } />
+          <Route path="/drafts" element={
+            <ErrorBoundary>
+              <EmailDrafts />
             </ErrorBoundary>
           } />
           <Route path="/tasks" element={<AutoTaskList />} />

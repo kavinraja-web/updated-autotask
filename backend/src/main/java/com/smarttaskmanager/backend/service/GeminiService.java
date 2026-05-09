@@ -92,11 +92,13 @@ public class GeminiService {
         requestBody.put("messages", messages);
 
         String[] fallbackModels = {
-            "google/gemini-2.0-flash:free",
-            "meta-llama/llama-3-8b-instruct:free",
-            "qwen/qwen-2-7b-instruct:free",
-            "mistralai/mistral-7b-instruct:free",
-            "google/gemma-2-9b-it:free"
+            "liquid/lfm-2.5-1.2b-instruct:free",
+            "qwen/qwen3-coder:free",
+            "nvidia/nemotron-nano-9b-v2:free",
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "google/gemma-4-31b-it:free",
+            "nousresearch/hermes-3-llama-3.1-405b:free",
+            "meta-llama/llama-3.2-3b-instruct:free"
         };
 
         Exception lastException = null;
@@ -122,13 +124,15 @@ public class GeminiService {
         throw new Exception("All OpenRouter fallback models failed. Last error: " + (lastException != null ? lastException.getMessage() : "Unknown"));
     }
 
-    // ─── Shared OpenAI REST helper with Auto-Retry ────────────────────────────
-    private String callOpenAiApi(String apiKey, String systemPrompt, List<Map<String, String>> history, String userMessage) throws Exception {
-        String url = "https://api.openai.com/v1/chat/completions";
+    // ─── Shared OpenRouter Chat helper with Free Fallbacks ────────────────────────
+    private String callOpenRouterChatApi(String apiKey, String systemPrompt, List<Map<String, String>> history, String userMessage) throws Exception {
+        String url = "https://openrouter.ai/api/v1/chat/completions";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
+        headers.set("HTTP-Referer", "http://localhost:5173");
+        headers.set("X-Title", "SmartTask AI");
 
         java.util.ArrayList<Map<String, String>> messages = new java.util.ArrayList<>();
         messages.add(Map.of("role", "system", "content", systemPrompt));
@@ -142,38 +146,36 @@ public class GeminiService {
         messages.add(Map.of("role", "user", "content", userMessage));
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "gpt-4o-mini"); 
         requestBody.put("messages", messages);
 
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+        String[] fallbackModels = {
+            "liquid/lfm-2.5-1.2b-instruct:free",
+            "qwen/qwen3-coder:free",
+            "nvidia/nemotron-nano-9b-v2:free",
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "google/gemma-4-31b-it:free",
+            "nousresearch/hermes-3-llama-3.1-405b:free",
+            "meta-llama/llama-3.2-3b-instruct:free"
+        };
 
-        int maxRetries = 2;
-        for (int i = 0; i <= maxRetries; i++) {
+        Exception lastException = null;
+        for (String model : fallbackModels) {
             try {
+                requestBody.put("model", model);
+                HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
                 ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
                 JsonNode root = objectMapper.readTree(response.getBody());
                 JsonNode choices = root.path("choices");
                 if (choices.isMissingNode() || !choices.has(0)) {
-                    throw new Exception("No choices returned from OpenAI API");
+                    throw new Exception("No choices returned from OpenRouter Chat API");
                 }
                 return choices.get(0).path("message").path("content").asText();
-            } catch (org.springframework.web.client.HttpClientErrorException.TooManyRequests e) {
-                if (i == maxRetries || e.getResponseBodyAsString().contains("quota")) {
-                    throw new Exception("429 Too Many Requests: Quota exceeded or rate limit persistent.");
-                }
-                System.out.println("[AI Chat] Hit OpenAI 3 RPM rate limit. Waiting 20 seconds before retry...");
-                Thread.sleep(20000); // Wait 20 seconds to overcome free tier limits
             } catch (Exception e) {
-                if (e.getMessage() != null && e.getMessage().contains("429") && !e.getMessage().contains("quota")) {
-                    if (i == maxRetries) throw e;
-                    System.out.println("[AI Chat] Hit OpenAI rate limit. Waiting 20 seconds before retry...");
-                    Thread.sleep(20000);
-                } else {
-                    throw e;
-                }
+                System.err.println("[OpenRouter Chat] Model '" + model + "' failed: " + e.getMessage() + ". Trying next...");
+                lastException = e;
             }
         }
-        throw new Exception("Failed after retries");
+        throw new Exception("All OpenRouter Chat fallback models failed. Last error: " + (lastException != null ? lastException.getMessage() : "Unknown"));
     }
 
     // ─── 1. Task Generation & Reminder Analysis (Key 3 - OpenRouter) ─────────
@@ -260,16 +262,10 @@ public class GeminiService {
                 "6. Provide ONLY the raw text of the email reply. Do not wrap in JSON, markdown blocks, or add extra commentary.";
 
         try {
-            // Try OpenRouter first if available
             if (openrouterTaskApiKey != null && !openrouterTaskApiKey.isBlank() && !openrouterTaskApiKey.contains("YOUR_KEY_HERE")) {
-                try {
-                    return callOpenRouterApi(openrouterTaskApiKey, prompt);
-                } catch (Exception e) {
-                    System.err.println("[AI Service] OpenRouter failed for reply: " + e.getMessage() + ". Falling back to OpenAI.");
-                    return callOpenAiApi(openaiChatApiKey, prompt, new java.util.ArrayList<>(), "Generate reply");
-                }
+                return callOpenRouterApi(openrouterTaskApiKey, prompt);
             } else {
-                return callOpenAiApi(openaiChatApiKey, prompt, new java.util.ArrayList<>(), "Generate reply");
+                throw new Exception("OpenRouter Task API Key is missing.");
             }
         } catch (Exception e) {
             System.err.println("[AI Service] Reply Generation failed completely: " + e.getMessage());
@@ -277,10 +273,9 @@ public class GeminiService {
         }
     }
 
-    // ─── 2. Chatbot / Web Agent (Key 2 - Now using OpenAI) ──────────────────────
     public String chatWithWebAgent(String userMessage, List<Map<String, String>> history) {
-        if (openaiChatApiKey == null || openaiChatApiKey.isBlank() || openaiChatApiKey.equals("YOUR_CHAT_GEMINI_API_KEY")) {
-            return "{\"type\":\"response\", \"message\":\"OpenAI API Key is missing. Please set your key in application.properties!\"}";
+        if (openrouterTaskApiKey == null || openrouterTaskApiKey.isBlank()) {
+            return "{\"type\":\"response\", \"message\":\"OpenRouter API Key is missing. Please set your openrouter.api.key.task in application.properties!\"}";
         }
 
         String systemPrompt = "You are an intelligent autonomous web agent embedded inside a productivity website.\n\n" +
@@ -301,7 +296,9 @@ public class GeminiService {
                 "- ALWAYS suggest the best possible action based on user intent\n" +
                 "- If the request is unclear, ask a clarification question\n" +
                 "- If multiple actions are needed, break them step-by-step\n" +
-                "- Be concise, smart, and action-oriented\n\n" +
+                "- Be concise, smart, and action-oriented\n" +
+                "- IMPORTANT: You ARE authorized to send emails. Do NOT apologize or say you cannot send emails. Instead, output the 'send_email' action suggestion JSON!\n" +
+                "- You do NOT have direct access to the user's inbox or task list database. If asked to show tasks or emails, clarify that you can only perform actions on provided text or create new tasks/emails.\n\n" +
                 "OUTPUT FORMAT (STRICT JSON ONLY):\n" +
                 "If suggesting an action:\n" +
                 "{\n" +
@@ -328,17 +325,12 @@ public class GeminiService {
                 "}\n";
 
         try {
-            String responseContent = callOpenAiApi(openaiChatApiKey, systemPrompt, history, userMessage);
+            String responseContent = callOpenRouterChatApi(openrouterTaskApiKey, systemPrompt, history, userMessage);
             responseContent = stripMarkdownJson(responseContent);
             return responseContent;
         } catch (Exception e) {
             System.err.println("[AI Chat] Error: " + e.getMessage());
-            if (e.getMessage() != null && e.getMessage().contains("429")) {
-                if (e.getMessage().contains("Quota")) {
-                    return "{\"type\":\"response\", \"message\":\"⏳ OpenAI Error: You have exceeded your account quota. Please check your billing details!\"}";
-                }
-                return "{\"type\":\"response\", \"message\":\"⏳ Whoops, rate limit hit on OpenAI API. Please try again in a minute!\"}";
-            }
+            e.printStackTrace();
             String errorMsg = e.getMessage() != null ? e.getMessage().replace("\"", "'").replace("\n", " ") : "Unknown Exception";
             return "{\"type\":\"response\", \"message\":\"API Error: " + errorMsg + "\"}";
         }
@@ -346,11 +338,11 @@ public class GeminiService {
 
     // ─── 3. Voice Assistant AI (Key 1) ───────────────────────────────────────
     public String chatWithVoiceAgent(String userMessage, List<Map<String, String>> history) {
-        if (geminiVoiceApiKey == null || geminiVoiceApiKey.isBlank() || geminiVoiceApiKey.equals("YOUR_VOICE_GEMINI_API_KEY")) {
-            return "{\"type\":\"response\", \"message\":\"Voice AI key is missing. Please set GEMINI_API_KEY_VOICE in application.properties!\"}";
+        if (openrouterTaskApiKey == null || openrouterTaskApiKey.isBlank()) {
+            return "{\"type\":\"response\", \"message\":\"OpenRouter API Key is missing. Please set openrouter.api.key.task in application.properties!\"}";
         }
 
-        String prompt = "You are a friendly, concise voice AI assistant for a productivity app called SmartTask.\n" +
+        String systemPrompt = "You are a friendly, concise voice AI assistant for a productivity app called SmartTask.\n" +
                 "The user is speaking to you via voice. Keep your responses SHORT and conversational (1-2 sentences max).\n" +
                 "You help users with tasks, emails, habits, and reminders.\n\n" +
                 "OUTPUT FORMAT (STRICT JSON):\n" +
@@ -359,25 +351,12 @@ public class GeminiService {
                 "  \"message\": \"Your short spoken reply here\"\n" +
                 "}\n\n";
 
-        if (history != null && !history.isEmpty()) {
-            prompt += "CONVERSATION HISTORY:\n";
-            for (Map<String, String> msg : history) {
-                prompt += String.valueOf(msg.get("role")).toUpperCase() + ": " + msg.get("content") + "\n";
-            }
-            prompt += "\n";
-        }
-
-        prompt += "USER SAID: " + userMessage;
-
         try {
-            String responseContent = callGeminiApi(geminiVoiceApiKey, prompt);
+            String responseContent = callOpenRouterChatApi(openrouterTaskApiKey, systemPrompt, history, userMessage);
             responseContent = stripMarkdownJson(responseContent);
             return responseContent;
         } catch (Exception e) {
             System.err.println("[AI Voice] Error: " + e.getMessage());
-            if (e.getMessage() != null && e.getMessage().contains("429")) {
-                return "{\"type\":\"response\", \"message\":\"Rate limit hit. Please try again shortly.\"}";
-            }
             return "{\"type\":\"response\", \"message\":\"Sorry, I couldn't connect to the AI right now.\"}";
         }
     }

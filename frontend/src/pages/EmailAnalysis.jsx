@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Mail, RefreshCw, Cpu, X, FileText, ChevronRight, ExternalLink, Clock, CheckCircle, MinusCircle, MessageSquare } from 'lucide-react';
+import { Mail, RefreshCw, Cpu, X, FileText, ChevronRight, ExternalLink, Clock, CheckCircle, MinusCircle, MessageSquare, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import axios from 'axios';
 import './EmailAnalysis.css';
 
@@ -177,6 +179,75 @@ const EmailAnalysis = () => {
         return match ? match[1] : senderStr;
     };
 
+    const handleDownloadReport = () => {
+        // Filter emails for today
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const todaysEmails = emails.filter(e => {
+            if (!e.processedAt) return false;
+            const date = new Date(e.processedAt);
+            return date >= today;
+        });
+
+        if (todaysEmails.length === 0) {
+            alert('No emails processed today to download.');
+            return;
+        }
+
+        const doc = new jsPDF();
+        
+        // Title
+        doc.setFontSize(18);
+        doc.text('Daily Email Analysis Report', 14, 22);
+        
+        doc.setFontSize(11);
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 30);
+        doc.text(`Total Emails Today: ${todaysEmails.length}`, 14, 36);
+
+        // Prepare table data
+        const tableColumn = ["Subject", "Summary", "Priority", "Deadline"];
+        const tableRows = [];
+
+        todaysEmails.forEach(email => {
+            // Since EmailLog doesn't explicitly store priority, we'll mark it as N/A unless we parse it.
+            // Tasks derived from emails might have priority, but for the email list we'll use a placeholder.
+            const priority = "N/A"; 
+            
+            // Format Deadline
+            const deadline = email.aiDeadline ? new Date(email.aiDeadline).toLocaleString() : 'No Deadline';
+            
+            // Clean up snippet
+            const summary = email.snippet || 'No summary available';
+            
+            const emailData = [
+                email.subject || '(No Subject)',
+                summary,
+                priority,
+                deadline
+            ];
+            
+            tableRows.push(emailData);
+        });
+
+        doc.autoTable({
+            startY: 45,
+            head: [tableColumn],
+            body: tableRows,
+            theme: 'grid',
+            headStyles: { fillColor: [124, 58, 237] }, // Match the app's purple theme
+            styles: { fontSize: 9, cellPadding: 3 },
+            columnStyles: {
+                0: { cellWidth: 40 },
+                1: { cellWidth: 'auto' },
+                2: { cellWidth: 20 },
+                3: { cellWidth: 30 }
+            }
+        });
+
+        doc.save(`Email_Analysis_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+    };
+
     const formatDate = dateStr => {
         if (!dateStr) return 'Unknown';
         try { return new Date(dateStr).toLocaleString(); } catch { return dateStr; }
@@ -197,6 +268,15 @@ const EmailAnalysis = () => {
                     </p>
                 </div>
                 <div className="header-actions">
+                    <button
+                        className="btn-secondary analyze-btn"
+                        onClick={handleDownloadReport}
+                        title="Download Today's Report as PDF"
+                        style={{ marginRight: '8px' }}
+                    >
+                        <Download size={16} />
+                        Download Report
+                    </button>
                     <button
                         className="btn-secondary sync-btn"
                         onClick={syncInbox}
