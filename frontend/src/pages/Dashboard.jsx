@@ -213,10 +213,10 @@ const Dashboard = () => {
 
             {/* ── Stat Cards ── */}
             <div className="db-stat-grid">
-                <StatCard title="Tasks Generated" value={stats.totalTasks || 1248} trend="18.5%" trendUp icon={<BarChart3 size={18} />} iconBg="rgba(124,58,237,0.12)" sparkColor="#7c3aed" delay={0} />
-                <StatCard title="Tasks Completed" value={stats.completedTasks || 842} trend="16.3%" trendUp icon={<CheckCircle2 size={18} />} iconBg="rgba(59,130,246,0.12)" sparkColor="#3b82f6" delay={0.06} />
-                <StatCard title="Pending Tasks" value={stats.pendingTasks || 406} trend="8.7%" trendUp icon={<Clock size={18} />} iconBg="rgba(16,185,129,0.12)" sparkColor="#10b981" delay={0.12} />
-                <StatCard title="Schedules Active" value={stats.highPriorityTasks || 23} trend="4.2%" trendUp icon={<Calendar size={18} />} iconBg="rgba(245,158,11,0.12)" sparkColor="#f59e0b" delay={0.18} />
+                <StatCard title="Tasks Generated" value={stats.totalTasks ?? 0} trend="18.5%" trendUp icon={<BarChart3 size={18} />} iconBg="rgba(124,58,237,0.12)" sparkColor="#7c3aed" delay={0} />
+                <StatCard title="Tasks Completed" value={stats.completedTasks ?? 0} trend="16.3%" trendUp icon={<CheckCircle2 size={18} />} iconBg="rgba(59,130,246,0.12)" sparkColor="#3b82f6" delay={0.06} />
+                <StatCard title="Pending Tasks" value={stats.pendingTasks ?? 0} trend="8.7%" trendUp icon={<Clock size={18} />} iconBg="rgba(16,185,129,0.12)" sparkColor="#10b981" delay={0.12} />
+                <StatCard title="Schedules Active" value={stats.highPriorityTasks ?? 0} trend="4.2%" trendUp icon={<Calendar size={18} />} iconBg="rgba(245,158,11,0.12)" sparkColor="#f59e0b" delay={0.18} />
             </div>
 
             {/* ── Middle Row ── */}

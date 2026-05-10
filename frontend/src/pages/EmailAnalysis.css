@@ -263,3 +263,50 @@
 
 /* ── Mobile helpers ── */
 .ea-hidden-mobile { display: none !important; }
+
+/* ── Desktop Layout Enhancements ── */
+@media (min-width: 769px) {
+    .ea-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    .ea-header-right { flex-wrap: nowrap; }
+    .ea-btn-analyze { flex: unset; }
+    .ea-main {
+        flex-direction: row;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    .ea-list-panel {
+        width: 340px;
+        flex-shrink: 0;
+    }
+    .ea-detail-panel {
+        flex: 1;
+    }
+    .ea-email-list {
+        max-height: calc(100vh - 380px);
+    }
+    .ea-stats-row {
+        margin: 0;
+        padding: 0 0 0.5rem 0;
+    }
+    .ea-stat-card {
+        flex: 1;
+        min-width: 140px;
+    }
+}
+
+/* ── Empty state styling ── */
+.ea-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    color: #64748b;
+    font-size: 0.88rem;
+    gap: 0.5rem;
+}

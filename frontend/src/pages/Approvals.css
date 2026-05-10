@@ -137,3 +137,112 @@
 .ap-btn-edit:hover { background: var(--rm-primary-light); }
 .ap-btn-approve { color: white; background: var(--rm-primary); border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; box-shadow: 0 4px 6px rgba(139, 92, 246, 0.2); transition: 0.2s; }
 .ap-btn-approve:hover { background: #7c3aed; }
+
+/* ── Refresh Button ── */
+.ap-refresh-btn {
+    background: none;
+    border: 1px solid rgba(139,92,246,0.25);
+    border-radius: 8px;
+    padding: 0.45rem 0.9rem;
+    color: #8b5cf6;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s;
+}
+.ap-refresh-btn:hover { background: rgba(139,92,246,0.08); }
+
+/* ── Mobile Responsive ── */
+@media (max-width: 768px) {
+    .ap-page { padding: 1rem; }
+
+    .ap-header {
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .ap-header-right {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .ap-search-box { flex: 1; }
+    .ap-btn-filter { font-size: 0.8rem; padding: 0.5rem 0.75rem; }
+
+    .ap-stats-container {
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -1rem 1rem -1rem;
+        padding: 0 1rem 0.5rem 1rem;
+    }
+
+    .ap-stat-card {
+        flex: 0 0 72%;
+        min-width: 180px;
+        scroll-snap-align: start;
+    }
+
+    /* Full-screen list/detail on mobile */
+    .ap-layout { gap: 0; }
+
+    .ap-list-pane {
+        border-radius: 12px;
+    }
+
+    .ap-list-controls {
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+
+    .ap-list-tabs {
+        gap: 0.75rem;
+        overflow-x: auto;
+        width: 100%;
+        padding-bottom: 0.25rem;
+    }
+
+    .ap-list-tab { font-size: 0.8rem; white-space: nowrap; }
+
+    .ap-list-item {
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+
+    .ap-item-title { font-size: 0.88rem; }
+    .ap-item-sender { font-size: 0.78rem; }
+    .ap-item-snippet { font-size: 0.78rem; }
+
+    .ap-detail-header { padding: 1rem; }
+    .ap-detail-title { font-size: 1rem; flex-direction: column; align-items: flex-start; gap: 0.4rem; }
+    .ap-detail-meta { flex-direction: column; gap: 0.25rem; }
+    .ap-detail-tabs { padding: 0 1rem; gap: 1rem; }
+    .ap-detail-tab { font-size: 0.82rem; }
+    .ap-detail-body { margin: 1rem; padding: 1rem; font-size: 0.88rem; }
+    .ap-confidence { margin: 0 1rem 1rem 1rem; padding: 0.75rem 1rem; }
+    .ap-detail-footer {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .ap-footer-right { width: 100%; justify-content: stretch; }
+    .ap-btn-reject, .ap-btn-edit, .ap-btn-approve {
+        flex: 1;
+        justify-content: center;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.82rem;
+    }
+    .ap-list-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        font-size: 0.78rem;
+    }
+}
+

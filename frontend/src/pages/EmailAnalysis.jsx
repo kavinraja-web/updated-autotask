@@ -33,8 +33,8 @@ const EmailAnalysis = () => {
         try {
             const res = await axios.get('/api/emails');
             if (res.data && res.data.length > 0) setEmails(res.data);
-            else setEmails(mockEmails);
-        } catch { setEmails(mockEmails); }
+            else setEmails([]);
+        } catch { setEmails([]); }
         finally { setLoading(false); }
     };
 
@@ -94,12 +94,12 @@ const EmailAnalysis = () => {
         return stripped.trim() || e.snippet || 'No Content';
     };
 
-    const displayEmails = emails.length > 0 ? emails : mockEmails;
+    const displayEmails = emails;
     const filtered = displayEmails.filter(e =>
         getSubject(e).toLowerCase().includes(searchQuery.toLowerCase()) ||
         getSender(e).toLowerCase().includes(searchQuery.toLowerCase())
     );
-    const activeEmail = filtered[selectedIndex] || filtered[0] || mockEmails[0];
+    const activeEmail = filtered[selectedIndex] || filtered[0] || null;
 
     const categoryColor = (cat) => {
         const map = { 'Promotional': { bg: 'rgba(245,158,11,0.12)', color: '#f59e0b' }, 'Informational': { bg: 'rgba(59,130,246,0.12)', color: '#3b82f6' }, 'ANALYZED': { bg: 'rgba(16,185,129,0.12)', color: '#10b981' } };
@@ -141,10 +141,10 @@ const EmailAnalysis = () => {
             {/* Stats */}
             <div className="ea-stats-row">
                 {[
-                    { icon: <Mail size={18} />, label: 'Emails Analyzed', value: displayEmails.length || 78, trend: '+18.2%', up: true, color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
-                    { icon: <Briefcase size={18} />, label: 'Action Required', value: 42, trend: '+12.4%', up: true, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
-                    { icon: <Info size={18} />, label: 'Informational', value: 28, trend: '+8.6%', up: true, color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
-                    { icon: <Users size={18} />, label: 'Promotional', value: 8, trend: '-5.1%', up: false, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+                    { icon: <Mail size={18} />, label: 'Emails Analyzed', value: displayEmails.length, trend: '+18.2%', up: true, color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
+                    { icon: <Briefcase size={18} />, label: 'Action Required', value: displayEmails.filter(e => e.category === 'Action Required' || e.aiStatus === 'ACTION_REQUIRED').length, trend: '+12.4%', up: true, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+                    { icon: <Info size={18} />, label: 'Informational', value: displayEmails.filter(e => e.category === 'Informational').length, trend: '+8.6%', up: true, color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
+                    { icon: <Users size={18} />, label: 'Promotional', value: displayEmails.filter(e => e.category === 'Promotional').length, trend: '-5.1%', up: false, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
                     { icon: <Clock size={18} />, label: 'Avg. Response Time', value: '2h 45m', trend: '+14.2%', up: false, color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
                 ].map((s, i) => (
                     <div className="ea-stat-card" key={i}>
@@ -177,9 +177,21 @@ const EmailAnalysis = () => {
 
                     <div className="ea-email-list">
                         {loading ? (
-                            <div className="ea-empty">Loading emails...</div>
+                            <div className="ea-empty">
+                                <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⏳</div>
+                                Loading emails...
+                            </div>
                         ) : filtered.length === 0 ? (
-                            <div className="ea-empty">No emails found.</div>
+                            <div className="ea-empty">
+                                <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📧</div>
+                                <div style={{ fontWeight: 700, marginBottom: '0.4rem', color: '#1e293b' }}>No emails analyzed yet</div>
+                                <div style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: '0.75rem' }}>
+                                    Click "Analyze New Email" to fetch and analyze your Gmail inbox.
+                                </div>
+                                <button className="ea-btn-analyze" onClick={handleAnalyze} style={{ margin: '0 auto' }}>
+                                    <CheckCircle2 size={14} /> Analyze Now
+                                </button>
+                            </div>
                         ) : filtered.map((email, i) => (
                             <div
                                 key={email.id || i}

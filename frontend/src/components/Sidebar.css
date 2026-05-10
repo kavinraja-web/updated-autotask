@@ -336,7 +336,9 @@
     align-items: center;
     justify-content: space-around;
     z-index: 1000;
-    padding: 0 8px;
+    padding: 0 4px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
   }
 
   .sb-mob-item {
@@ -345,18 +347,32 @@
     align-items: center;
     justify-content: center;
     gap: 3px;
-    padding: 6px 10px;
+    padding: 4px 8px 6px;
     border-radius: 10px;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255, 255, 255, 0.4);
     text-decoration: none;
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     font-weight: 600;
+    letter-spacing: 0.02em;
     transition: all 0.2s;
     flex: 1;
+    position: relative;
   }
 
   .sb-mob-item.active {
     color: #a855f7;
+  }
+
+  .sb-mob-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 3px;
+    background: #a855f7;
+    border-radius: 2px 2px 0 0;
   }
 
   .sb-mob-item:hover {

@@ -7,38 +7,7 @@ import {
 import axios from 'axios';
 import './Approvals.css';
 
-const mockApprovals = [
-    {
-        id: "mock-1",
-        subject: "Client Inquiry - Project Update",
-        from: "john.doe@example.com",
-        to: "you@example.com",
-        priority: "High",
-        timeAgo: "2m ago",
-        receivedDate: "May 16, 2024, 10:24 AM",
-        snippet: "Hi, could you please provide an update on the current...",
-        replyDraft: "Hi John,\n\nThank you for reaching out. The project is progressing as planned. We have completed the initial phase and are currently working on the development stage. We expect to share a detailed update by the end of this week.\n\nPlease let me know if you need any specific information in the meantime.\n\nBest regards,\nYour Name\nYour Company",
-        originalEmailText: "Hi, could you please provide an update on the current project status? Thanks, John.",
-        confidence: 92,
-        unread: true,
-        status: "PENDING"
-    },
-    {
-        id: "mock-2",
-        subject: "Meeting Reschedule Request",
-        from: "sarah.wilson@example.com",
-        to: "you@example.com",
-        priority: "Medium",
-        timeAgo: "15m ago",
-        receivedDate: "May 16, 2024, 10:11 AM",
-        snippet: "Hello, I'd like to reschedule our meeting to next week...",
-        replyDraft: "Hi Sarah,\n\nCertainly, I am available next Tuesday or Wednesday afternoon. Let me know what works best for you.",
-        originalEmailText: "Hello, I'd like to reschedule our meeting to next week as something came up. Let me know. - Sarah",
-        confidence: 85,
-        unread: true,
-        status: "PENDING"
-    }
-];
+
 
 const Approvals = () => {
     const [approvals, setApprovals] = useState([]);
@@ -46,49 +15,49 @@ const Approvals = () => {
     const [detailTab, setDetailTab] = useState('reply');
     const [loading, setLoading] = useState(true);
     const [mobileView, setMobileView] = useState('list'); // 'list' | 'detail'
+    const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchDrafts = async () => {
-            try {
-                const res = await axios.get('/api/email-drafts');
-                if (res.data && res.data.length > 0) {
-                    const mapped = res.data.map(draft => ({
-                        id: draft.id,
-                        subject: draft.subject || "No Subject",
-                        from: draft.sender || "Unknown",
-                        to: "you@example.com",
-                        priority: "High", // Dynamic Priority based on urgency could go here
-                        timeAgo: draft.createdAt ? new Date(draft.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Recently",
-                        receivedDate: draft.createdAt ? new Date(draft.createdAt).toLocaleString() : "Recently",
-                        snippet: draft.originalEmailText ? draft.originalEmailText.substring(0, 60) + "..." : "No content",
-                        replyDraft: draft.generatedReply || "No generated reply available.",
-                        originalEmailText: draft.originalEmailText || "No original text available.",
-                        confidence: 95, // mock AI confidence
-                        unread: draft.status === 'PENDING',
-                        status: draft.status
-                    }));
-                    setApprovals(mapped);
-                    if (mapped.length > 0) setSelectedId(mapped[0].id);
-                }
-            } catch (error) {
-                console.error("Failed to fetch email approvals from n8n", error);
-            } finally {
-                setLoading(false);
+    const fetchApprovals = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await axios.get('/api/email-drafts');
+            if (res.data && res.data.length > 0) {
+                const mapped = res.data.map(draft => ({
+                    id: draft.id,
+                    subject: draft.subject || "No Subject",
+                    from: draft.sender || "Unknown",
+                    to: "you@example.com",
+                    priority: draft.urgency === 'High' || draft.urgency === 'Critical' ? "High" : draft.urgency === 'Low' ? "Low" : "Medium",
+                    timeAgo: draft.createdAt ? new Date(draft.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Recently",
+                    receivedDate: draft.createdAt ? new Date(draft.createdAt).toLocaleString() : "Recently",
+                    snippet: draft.originalEmailText ? draft.originalEmailText.substring(0, 80) + "..." : "No content",
+                    replyDraft: draft.generatedReply || "No generated reply available.",
+                    originalEmailText: draft.originalEmailText || "No original text available.",
+                    confidence: draft.confidence || 95,
+                    unread: draft.status === 'PENDING',
+                    status: draft.status || 'PENDING'
+                }));
+                setApprovals(mapped);
+                if (mapped.length > 0) setSelectedId(mapped[0].id);
+            } else {
+                setApprovals([]);
             }
-        };
-        fetchDrafts();
-    }, []);
+        } catch (error) {
+            console.error("Failed to fetch email approvals from n8n", error);
+            setError("Could not load approvals. Make sure the backend is connected.");
+            setApprovals([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchApprovals(); }, []);
 
     const selectedApp = approvals.find(a => a.id === selectedId);
 
     const handleApprove = async () => {
         if (!selectedApp) return;
-        if (selectedApp.id.toString().startsWith("mock")) {
-            // just update UI for mocks
-            setApprovals(prev => prev.map(a => a.id === selectedApp.id ? { ...a, status: 'APPROVED', unread: false } : a));
-            return;
-        }
-        
         try {
             await axios.post(`/api/email-drafts/${selectedApp.id}/approve`);
             setApprovals(prev => prev.map(a => a.id === selectedApp.id ? { ...a, status: 'APPROVED', unread: false } : a));
@@ -100,11 +69,6 @@ const Approvals = () => {
 
     const handleReject = async () => {
         if (!selectedApp) return;
-        if (selectedApp.id.toString().startsWith("mock")) {
-            setApprovals(prev => prev.map(a => a.id === selectedApp.id ? { ...a, status: 'REJECTED', unread: false } : a));
-            return;
-        }
-
         try {
             await axios.post(`/api/email-drafts/${selectedApp.id}/reject`);
             setApprovals(prev => prev.map(a => a.id === selectedApp.id ? { ...a, status: 'REJECTED', unread: false } : a));
@@ -116,9 +80,9 @@ const Approvals = () => {
     const stats = {
         pending: approvals.filter(a => a.status === 'PENDING').length,
         approved: approvals.filter(a => a.status === 'APPROVED').length,
-        auto: 18, // static for UI parity
+        auto: approvals.filter(a => a.status === 'AUTO_APPROVED').length,
         rejected: approvals.filter(a => a.status === 'REJECTED').length,
-        total: approvals.length + 18
+        total: approvals.length
     };
 
     return (
@@ -218,7 +182,31 @@ const Approvals = () => {
                     </div>
                     
                     <div className="ap-list">
-                        {approvals.map(item => (
+                        {loading ? (
+                            <div style={{ padding: '3rem', textAlign: 'center', color: '#8b5cf6' }}>
+                                <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⏳</div>
+                                <div style={{ fontSize: '0.9rem', color: '#64748b' }}>Loading approvals from n8n...</div>
+                            </div>
+                        ) : error ? (
+                            <div style={{ padding: '2rem', textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⚠️</div>
+                                <div style={{ fontSize: '0.85rem', color: '#ef4444', marginBottom: '0.75rem' }}>{error}</div>
+                                <button onClick={fetchApprovals} style={{ padding: '0.5rem 1rem', borderRadius: 8, background: '#8b5cf6', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
+                                    🔄 Retry
+                                </button>
+                            </div>
+                        ) : approvals.length === 0 ? (
+                            <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+                                <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📭</div>
+                                <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.4rem', color: '#1e293b' }}>No pending approvals</div>
+                                <div style={{ fontSize: '0.82rem', lineHeight: 1.5 }}>
+                                    When n8n generates AI email replies, they will appear here for your review.
+                                </div>
+                                <button onClick={fetchApprovals} style={{ marginTop: '1rem', padding: '0.5rem 1rem', borderRadius: 8, background: '#8b5cf6', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
+                                    🔄 Refresh
+                                </button>
+                            </div>
+                        ) : approvals.map(item => (
                             <div 
                                 key={item.id} 
                                 className={`ap-list-item ${selectedId === item.id ? 'selected' : ''}`}
@@ -231,7 +219,7 @@ const Approvals = () => {
                                 }}
                             >
                                 <input type="checkbox" className="ap-item-checkbox" />
-                                <div className="ap-item-icon">M</div>
+                                <div className="ap-item-icon">{(item.from || '?')[0].toUpperCase()}</div>
                                 <div className="ap-item-content">
                                     <div className="ap-item-title-row">
                                         <div className="ap-item-title" style={{ textDecoration: item.status === 'REJECTED' ? 'line-through' : 'none' }}>
@@ -242,7 +230,7 @@ const Approvals = () => {
                                     <div className="ap-item-snippet">{item.snippet}</div>
                                 </div>
                                 <div className="ap-item-time">
-                                    <span className={`ap-priority-badge ${item.priority.toLowerCase()}`}>
+                                    <span className={`ap-priority-badge ${(item.priority || 'medium').toLowerCase()}`}>
                                         <Briefcase size={10} /> {item.priority}
                                     </span>
                                     <span>{item.timeAgo}</span>
@@ -250,11 +238,6 @@ const Approvals = () => {
                                 </div>
                             </div>
                         ))}
-                        {approvals.length === 0 && !loading && (
-                            <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-                                No approvals found.
-                            </div>
-                        )}
                     </div>
 
                     <div className="ap-list-footer">

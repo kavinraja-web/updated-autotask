@@ -531,3 +531,157 @@ body.dark-mode {
 
 .c-gray { color: #64748b; }
 .bg-gray { background: rgba(100, 116, 139, 0.1); }
+
+/* ── Mobile Responsive ── */
+@media (max-width: 768px) {
+    .mt-page {
+        padding: 1rem;
+    }
+
+    .mt-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .mt-header-right {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .mt-search-box {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .mt-search-box input {
+        width: 100%;
+    }
+
+    .mt-btn-primary {
+        font-size: 0.8rem;
+        padding: 0.55rem 0.9rem;
+    }
+
+    .mt-title { font-size: 1.3rem; }
+    .mt-subtitle { font-size: 0.85rem; }
+
+    .mt-stats-container {
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .mt-stat-card {
+        flex: 0 0 65%;
+        min-width: 160px;
+        padding: 1rem;
+        scroll-snap-align: start;
+    }
+
+    .mt-stat-icon-wrap {
+        width: 36px;
+        height: 36px;
+    }
+
+    .mt-stat-value { font-size: 1.4rem; }
+
+    .mt-controls-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .mt-tabs-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        gap: 0;
+    }
+
+    .mt-tab-btn {
+        font-size: 0.78rem;
+        padding: 0.45rem 0.75rem;
+        white-space: nowrap;
+    }
+
+    .mt-dropdowns {
+        display: none; /* Hide filter dropdowns on mobile */
+    }
+
+    /* Convert table to card layout on mobile */
+    .mt-table-container {
+        overflow: visible;
+    }
+
+    .mt-table {
+        min-width: unset;
+        display: block;
+    }
+
+    .mt-table thead {
+        display: none;
+    }
+
+    .mt-table tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0.75rem;
+    }
+
+    .mt-table tbody tr {
+        display: flex;
+        flex-direction: column;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem;
+        gap: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .mt-table tbody tr:hover { background: #faf8ff; }
+
+    .mt-table td {
+        padding: 0;
+        border: none;
+        display: flex;
+        align-items: center;
+    }
+
+    .mt-checkbox-cell { display: none; }
+
+    .mt-td-task { gap: 0.75rem; }
+
+    .mt-task-icon-box {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        flex-shrink: 0;
+    }
+
+    .mt-task-title-text { font-size: 0.88rem; }
+    .mt-task-desc-text { font-size: 0.78rem; }
+
+    /* Show status, priority, schedule inline on mobile */
+    .mt-table td:nth-child(2)::before { content: ''; }
+    .mt-table td:nth-child(3)::before { content: 'Category: '; font-size: 0.72rem; color: #94a3b8; margin-right: 0.25rem; }
+    .mt-table td:nth-child(4)::before { content: 'Priority: '; font-size: 0.72rem; color: #94a3b8; margin-right: 0.25rem; }
+    .mt-table td:nth-child(5) { display: none; } /* hide schedule on mobile */
+    .mt-table td:nth-child(6)::before { content: 'Status: '; font-size: 0.72rem; color: #94a3b8; margin-right: 0.25rem; }
+    .mt-table td:nth-child(7) { display: none; } /* hide created date */
+    .mt-table td:nth-child(8) { justify-content: flex-end; }
+
+    .mt-pagination {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        align-items: center;
+    }
+
+    .mt-rows-per-page { display: none; }
+}
+

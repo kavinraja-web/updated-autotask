@@ -684,4 +684,11 @@
   .db-task-sched, .db-task-lastrun { display: none; }
   .db-topbar { flex-direction: column; gap: 12px; }
   .db-topbar-right { width: 100%; justify-content: flex-end; }
+  .db-gen-input-row { flex-direction: column; }
+  .db-gen-input { width: 100%; }
+  .db-gen-btn { width: 100%; justify-content: center; }
+  .db-examples-row { gap: 6px; }
+  .db-example-chip { font-size: 0.7rem; padding: 5px 10px; }
+  .db-page-title { font-size: 1.35rem; }
+  .db-promo-banner { flex-direction: column; gap: 12px; align-items: flex-start; }
 }

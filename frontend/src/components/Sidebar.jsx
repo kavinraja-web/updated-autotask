@@ -41,6 +41,15 @@ const Sidebar = ({ onLogout }) => {
         { name: 'History',         path: '/history',   icon: <History size={18} />, disabled: true },
     ];
 
+    // Mobile nav: show Dashboard, Tasks, My Tasks, Approvals, Reminders (5 most important)
+    const mobileNavItems = [
+        { name: 'Home',      path: '/dashboard', icon: <LayoutDashboard size={20} /> },
+        { name: 'Generate',  path: '/tasks',     icon: <Zap size={20} /> },
+        { name: 'Tasks',     path: '/mytasks',   icon: <ListChecks size={20} /> },
+        { name: 'Approvals', path: '/approvals', icon: <ShieldCheck size={20} /> },
+        { name: 'Reminders', path: '/reminders', icon: <Bell size={20} /> },
+    ];
+
     return (
         <>
             {/* ── Desktop Sidebar ── */}
@@ -125,18 +134,16 @@ const Sidebar = ({ onLogout }) => {
 
             {/* ── Mobile Bottom Nav ── */}
             <nav className="sb-mobile-nav">
-                {navItems.slice(0, 5).map((item) =>
-                    item.disabled ? null : (
-                        <NavLink
-                            key={item.path}
-                            to={item.path}
-                            className={({ isActive }) => `sb-mob-item${isActive ? ' active' : ''}`}
-                        >
-                            {item.icon}
-                            <span>{item.name.split(' ')[0]}</span>
-                        </NavLink>
-                    )
-                )}
+                {mobileNavItems.map((item) => (
+                    <NavLink
+                        key={item.path}
+                        to={item.path}
+                        className={({ isActive }) => `sb-mob-item${isActive ? ' active' : ''}`}
+                    >
+                        {item.icon}
+                        <span>{item.name}</span>
+                    </NavLink>
+                ))}
             </nav>
         </>
     );
