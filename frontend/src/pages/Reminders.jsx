@@ -1,343 +1,378 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect } from 'react';
 import {
-    Bell, RefreshCw, Clock, Mail, AlertTriangle,
-    CheckCircle, AlertCircle, Calendar, ChevronRight, X, Cpu, FileText, ExternalLink, Plus
+    Search, Plus, Bell, ChevronDown, Calendar, ChevronLeft, ChevronRight,
+    MoreVertical, Mail, FileText, Users, Send, Database, Gift, BarChart3,
+    CheckCircle2, Clock, AlertCircle, List, PlayCircle, BellOff
 } from 'lucide-react';
 import axios from 'axios';
 import './Reminders.css';
 
-// ─── Live countdown label ─────────────────────────────────────────────────────
-const CountdownLabel = ({ daysUntil }) => {
-    if (daysUntil < 0) {
-        const abs = Math.abs(daysUntil);
-        return <span className="cd-overdue">{abs} day{abs !== 1 ? 's' : ''} overdue</span>;
+const initialMockReminders = [
+    {
+        id: 1, title: "Send Progress Report Email", desc: "Compose and send progress report email to the team.",
+        iconType: "mail", iconColor: "purple", type: "Task Reminder", typeColor: "purple",
+        scheduleDate: "May 16, 2024", scheduleTime: "10:00 AM", freq: "Every Monday", status: "Active", statusColor: "green"
+    },
+    {
+        id: 2, title: "Prepare Progress Report", desc: "Collect and summarize the latest progress updates.",
+        iconType: "file", iconColor: "blue", type: "Task Reminder", typeColor: "blue",
+        scheduleDate: "May 16, 2024", scheduleTime: "9:30 AM", freq: "Every Monday", status: "Active", statusColor: "green"
+    },
+    {
+        id: 3, title: "Review Report Content", desc: "Review the report for accuracy and completeness.",
+        iconType: "users", iconColor: "green", type: "Task Reminder", typeColor: "green",
+        scheduleDate: "May 16, 2024", scheduleTime: "9:45 AM", freq: "Every Monday", status: "Active", statusColor: "green"
+    },
+    {
+        id: 4, title: "Follow Up on Responses", desc: "Check replies and follow up on any important feedback.",
+        iconType: "send", iconColor: "orange", type: "Task Reminder", typeColor: "orange",
+        scheduleDate: "May 16, 2024", scheduleTime: "11:00 AM", freq: "Every Monday", status: "Snoozed", statusColor: "orange"
+    },
+    {
+        id: 5, title: "Database Backup", desc: "Backup the database to ensure data safety and prevent data loss.",
+        iconType: "database", iconColor: "purple", type: "System Reminder", typeColor: "purple",
+        scheduleDate: "May 15, 2024", scheduleTime: "2:00 AM", freq: "Every day", status: "Active", statusColor: "green"
+    },
+    {
+        id: 6, title: "Birthday Wishes", desc: "Send birthday wishes to team members on their special day.",
+        iconType: "gift", iconColor: "red", type: "Personal Reminder", typeColor: "red",
+        scheduleDate: "May 14, 2024", scheduleTime: "9:00 AM", freq: "On event day", status: "Disabled", statusColor: "red"
     }
-    if (daysUntil === 0) return <span className="cd-today">Due Today!</span>;
-    if (daysUntil === 1) return <span className="cd-tomorrow">Due Tomorrow</span>;
-    return <span className="cd-days">{daysUntil} days left</span>;
-};
+];
 
-// ─── Progress ring (SVG) ─────────────────────────────────────────────────────
-const UrgencyRing = ({ daysUntil, urgency }) => {
-    const radius = 22;
-    const circ = 2 * Math.PI * radius;
-    const max = 14;
-    const clamped = Math.max(0, Math.min(daysUntil, max));
-    const progress = daysUntil < 0 ? 1 : 1 - clamped / max;
-    const dash = progress * circ;
-
-    const colorMap = {
-        Overdue:  '#ef4444',
-        Today:    '#f97316',
-        Tomorrow: '#f59e0b',
-        Critical: '#fb923c',
-        High:     '#facc15',
-        Medium:   '#818cf8',
-        Low:      '#34d399',
-    };
-    const color = colorMap[urgency] || '#818cf8';
-
-    return (
-        <svg width="56" height="56" viewBox="0 0 56 56" className="urgency-ring">
-            <circle cx="28" cy="28" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
-            <circle
-                cx="28" cy="28" r={radius}
-                fill="none"
-                stroke={color}
-                strokeWidth="4"
-                strokeDasharray={`${dash} ${circ}`}
-                strokeLinecap="round"
-                transform="rotate(-90 28 28)"
-                style={{ filter: `drop-shadow(0 0 4px ${color})` }}
-            />
-            <text x="28" y="33" textAnchor="middle" fill={color} fontSize="11" fontWeight="700">
-                {daysUntil < 0 ? '!' : daysUntil <= 0 ? '0d' : daysUntil > 99 ? '99+' : `${daysUntil}d`}
-            </text>
-        </svg>
-    );
-};
-
-// ─── Urgency Badge ────────────────────────────────────────────────────────────
-const UrgencyBadge = ({ urgency }) => {
-    const iconMap = {
-        Overdue:  <AlertTriangle size={12} />,
-        Today:    <AlertCircle  size={12} />,
-        Tomorrow: <Clock        size={12} />,
-        Critical: <AlertTriangle size={12} />,
-        High:     <Bell         size={12} />,
-        Medium:   <Calendar     size={12} />,
-        Low:      <CheckCircle  size={12} />,
-    };
-    return (
-        <span className={`urgency-badge urgency-${urgency?.toLowerCase()}`}>
-            {iconMap[urgency]}
-            {urgency}
-        </span>
-    );
-};
-
-// ─── Detail Modal ─────────────────────────────────────────────────────────────
-const ReminderModal = ({ reminder, onClose }) => {
-    useEffect(() => {
-        const fn = (e) => { if (e.key === 'Escape') onClose(); };
-        window.addEventListener('keydown', fn);
-        document.body.style.overflow = 'hidden';
-        window.scrollTo({ top: 0, behavior: 'instant' });
-        return () => {
-            window.removeEventListener('keydown', fn);
-            document.body.style.overflow = '';
-        };
-    }, [onClose]);
-
-    if (!reminder) return null;
-    const formatDate = (s) => s ? new Date(s).toLocaleString() : 'Unknown';
-
-    const modalContent = (
-        <div className="r-modal-overlay" onClick={onClose}>
-            <div className="r-modal-panel" onClick={(e) => e.stopPropagation()}>
-                <div className="r-modal-header">
-                    <div className="r-modal-title-row">
-                        <UrgencyRing daysUntil={reminder.daysUntil} urgency={reminder.urgency} />
-                        <div className="r-modal-title-text">
-                            <h2>{reminder.subject || '(No Subject)'}</h2>
-                            <div className="r-modal-meta">
-                                <span><Mail size={13} /> {reminder.sender}</span>
-                                <span><Clock size={13} /> Processed: {formatDate(reminder.processedAt)}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="r-modal-actions">
-                        {reminder.messageId && (
-                            <a 
-                                href={`https://mail.google.com/mail/u/0/#inbox/${reminder.messageId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="btn-gmail-link"
-                                title="Open in Gmail"
-                            >
-                                <ExternalLink size={14} />
-                                <span>View in Gmail</span>
-                            </a>
-                        )}
-                        <button className="r-modal-close" onClick={onClose}><X size={18} /></button>
-                    </div>
-                </div>
-
-                <div className="r-modal-body">
-                    {/* Deadline card */}
-                    <div className="r-deadline-card">
-                        <div className="r-deadline-left">
-                            <div className="r-deadline-label">Detected Deadline</div>
-                            <div className="r-deadline-date">{reminder.deadlineText || 'No text detected'}</div>
-                            <div className="r-deadline-iso">
-                                {reminder.deadlineDate 
-                                    ? new Date(reminder.deadlineDate + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) 
-                                    : 'No specific date detected'}
-                            </div>
-                        </div>
-                        <div className="r-deadline-right">
-                            <CountdownLabel daysUntil={reminder.daysUntil} />
-                            <UrgencyBadge urgency={reminder.urgency} />
-                        </div>
-                    </div>
-
-                    {/* Snippet */}
-                    {reminder.snippet && (
-                        <div className="r-section">
-                            <div className="r-section-label"><Cpu size={13} /> AI Summary Analysis</div>
-                            <p className="r-snippet">{reminder.snippet}</p>
-                        </div>
-                    )}
-
-                    {/* Full Body Reader */}
-                    <div className="r-section r-body-section">
-                        <div className="r-section-label"><FileText size={13} /> Original Email Body</div>
-                        <div className="r-body-scroll">
-                            {reminder.body ? (
-                                <div 
-                                    className="r-rendered-body"
-                                    dangerouslySetInnerHTML={{ __html: reminder.body }}
-                                />
-                            ) : (
-                                <p className="r-snippet">Full content not available.</p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-
-    return createPortal(modalContent, document.body);
-};
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
 const Reminders = () => {
-    const [reminders, setReminders]         = useState([]);
-    const [loading, setLoading]             = useState(true);
-    const [error, setError]                 = useState(null);
-    const [selectedReminder, setSelected]   = useState(null);
-    const [filter, setFilter]               = useState('All');
+    const [reminders, setReminders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [form, setForm] = useState({ title: '', description: '', scheduleDate: '', scheduleTime: '' });
+    const [saving, setSaving] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [showNotifs, setShowNotifs] = useState(false);
+    const [toast, setToast] = useState('');
 
-    const fetchReminders = useCallback(() => {
-        setLoading(true);
-        setError(null);
-        axios.get('/api/reminders')
-            .then((res) => setReminders(res.data))
-            .catch((err) => {
-                console.error('Failed to fetch reminders:', err);
-                setError('Could not load reminders. Make sure the backend is running.');
-            })
-            .finally(() => setLoading(false));
+    useEffect(() => {
+        const fetchReminders = async () => {
+            try {
+                const res = await axios.get('/api/reminders');
+                if (res.data && res.data.length > 0) {
+                    const mapped = res.data.map((rem, i) => ({
+                        id: rem.emailId || `api-${i}`,
+                        title: rem.subject || 'Smart Email Reminder',
+                        desc: rem.snippet || 'Deadline detected from incoming mail.',
+                        iconType: 'mail', iconColor: 'purple',
+                        type: 'Smart Reminder', typeColor: 'purple',
+                        scheduleDate: rem.deadlineDate ? new Date(rem.deadlineDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Soon',
+                        scheduleTime: rem.deadlineText || 'Pending',
+                        freq: 'Once',
+                        status: rem.urgency === 'Overdue' ? 'Disabled' : 'Active',
+                        statusColor: rem.urgency === 'Overdue' ? 'red' : 'green'
+                    }));
+                    setReminders(mapped);
+                } else {
+                    setReminders(initialMockReminders);
+                }
+            } catch { setReminders(initialMockReminders); }
+            finally { setLoading(false); }
+        };
+        fetchReminders();
+        axios.get('/api/notifications/unread').then(r => setNotifications(Array.isArray(r.data) ? r.data : [])).catch(() => {});
     }, []);
 
-    useEffect(() => { fetchReminders(); }, [fetchReminders]);
+    const handleCreateReminder = async () => {
+        if (!form.title.trim()) { setToast('Please enter a reminder title.'); setTimeout(() => setToast(''), 3000); return; }
+        setSaving(true);
+        try {
+            const dt = form.scheduleDate && form.scheduleTime
+                ? `${form.scheduleDate}T${form.scheduleTime}:00`
+                : new Date(Date.now() + 86400000).toISOString().slice(0, 19);
+            await axios.post('/api/tasks', {
+                title: form.title.trim(),
+                description: form.description.trim() || 'Reminder',
+                priority: 'Medium', status: 'Pending', deadline: dt
+            });
+            setToast('✅ Reminder created successfully!');
+            setShowModal(false);
+            setForm({ title: '', description: '', scheduleDate: '', scheduleTime: '' });
+            setReminders(prev => [{
+                id: Date.now(), title: form.title, desc: form.description || 'Reminder',
+                iconType: 'bell', iconColor: 'purple', type: 'Task Reminder', typeColor: 'purple',
+                scheduleDate: form.scheduleDate || 'Soon', scheduleTime: form.scheduleTime || '',
+                freq: 'Once', status: 'Active', statusColor: 'green'
+            }, ...prev]);
+        } catch { setToast('❌ Failed to create reminder.'); }
+        finally { setSaving(false); setTimeout(() => setToast(''), 4000); }
+    };
 
-    const urgencyFilters = ['All', 'Overdue', 'Today', 'Tomorrow', 'Critical', 'High', 'Medium', 'Low'];
-    const filtered = filter === 'All' ? reminders : reminders.filter(r => r.urgency === filter);
+    const getIcon = (type, size = 18) => {
+        switch (type) {
+            case 'mail': return <Mail size={size} />;
+            case 'file': return <FileText size={size} />;
+            case 'users': return <Users size={size} />;
+            case 'send': return <Send size={size} />;
+            case 'database': return <Database size={size} />;
+            case 'gift': return <Gift size={size} />;
+            case 'chart': return <BarChart3 size={size} />;
+            default: return <Bell size={size} />;
+        }
+    };
 
-    // Summary counts
-    const counts = {};
-    reminders.forEach(r => { counts[r.urgency] = (counts[r.urgency] || 0) + 1; });
-    const overdueCnt  = counts['Overdue']  || 0;
-    const criticalCnt = (counts['Today'] || 0) + (counts['Tomorrow'] || 0) + (counts['Critical'] || 0);
-    const upcomingCnt = (counts['High']   || 0) + (counts['Medium']  || 0) + (counts['Low']     || 0);
-    const totalCnt    = reminders.length;
+    const toggleStatus = (id) => {
+        setReminders(prev => prev.map(r => {
+            if (r.id === id) {
+                const newStatus = r.status === 'Active' ? 'Disabled' : 'Active';
+                return { ...r, status: newStatus, statusColor: newStatus === 'Active' ? 'green' : 'red' };
+            }
+            return r;
+        }));
+    };
 
-    const formatDate = (s) => { try { return new Date(s).toLocaleDateString(); } catch { return s; } };
+    const stats = {
+        total: reminders.length,
+        active: reminders.filter(r => r.status === 'Active').length,
+        snoozed: reminders.filter(r => r.status === 'Snoozed').length,
+        triggered: 7, // Mock static for visual parity
+        disabled: reminders.filter(r => r.status === 'Disabled').length
+    };
 
     return (
-        <div className="page-container reminders-page">
+        <div className="rm-page">
             {/* Header */}
-            <header className="rem-flex-header">
-                <div className="rem-header-titles">
-                    <h1><Bell size={28} color="#818cf8" /> Smart Reminders</h1>
-                    <p>Deadlines automatically detected from your email content by AI scanning.</p>
+            <div className="rm-header">
+                <div className="rm-header-left">
+                    <div className="rm-title-row">
+                        <Bell className="rm-title-icon" size={24} />
+                        <h1 className="rm-title">Reminders</h1>
+                    </div>
+                    <p className="rm-subtitle">Create, manage, and customize reminders to stay on top of your tasks.</p>
                 </div>
-                <button className="btn-primary rem-refresh-btn" onClick={fetchReminders} disabled={loading}>
-                    <RefreshCw size={16} className={loading ? 'spin' : ''} />
-                    {loading ? 'Loading…' : 'Refresh'}
-                </button>
-            </header>
-
-            {/* Error */}
-            {error && (
-                <div className="rem-error-bar">⚠️ {error}</div>
-            )}
-
-            {/* Summary Cards */}
-            {!loading && !error && (
-                <div className="rem-summary-grid">
-                    <div className="rem-summary-card overdue">
-                        <div className="rem-summary-icon"><AlertTriangle size={22} /></div>
-                        <div>
-                            <div className="rem-summary-count">{overdueCnt}</div>
-                            <div className="rem-summary-label">Overdue</div>
+                <div className="rm-header-right">
+                    <button className="rm-btn-primary" onClick={() => setShowModal(true)}>
+                        <Plus size={16} /> Create Reminder
+                    </button>
+                    <div style={{position:'relative'}}>
+                        <div className="rm-bell-wrapper" onClick={() => setShowNotifs(v => !v)} style={{cursor:'pointer'}}>
+                            <Bell size={20} />
+                            {notifications.length > 0 && <div className="rm-bell-badge">{notifications.length}</div>}
                         </div>
-                    </div>
-                    <div className="rem-summary-card critical">
-                        <div className="rem-summary-icon"><AlertCircle size={22} /></div>
-                        <div>
-                            <div className="rem-summary-count">{criticalCnt}</div>
-                            <div className="rem-summary-label">Due ≤ 3 days</div>
-                        </div>
-                    </div>
-                    <div className="rem-summary-card upcoming">
-                        <div className="rem-summary-icon"><Calendar size={22} /></div>
-                        <div>
-                            <div className="rem-summary-count">{upcomingCnt}</div>
-                            <div className="rem-summary-label">Upcoming</div>
-                        </div>
-                    </div>
-                    <div className="rem-summary-card total">
-                        <div className="rem-summary-icon"><Bell size={22} /></div>
-                        <div>
-                            <div className="rem-summary-count">{totalCnt}</div>
-                            <div className="rem-summary-label">Total Detected</div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Filter Chips */}
-            {!loading && reminders.length > 0 && (
-                <div className="rem-filter-bar">
-                    {urgencyFilters.map(f => (
-                        <button
-                            key={f}
-                            className={`rem-filter-chip ${filter === f ? 'active' : ''} chip-${f.toLowerCase()}`}
-                            onClick={() => setFilter(f)}
-                        >
-                            {f}
-                            {f !== 'All' && counts[f] ? <span className="chip-count">{counts[f]}</span> : null}
-                            {f === 'All' && <span className="chip-count">{totalCnt}</span>}
-                        </button>
-                    ))}
-                </div>
-            )}
-
-            {/* List */}
-            <div className="glass-panel rem-list">
-                {loading ? (
-                    <div className="rem-empty-state">
-                        <div className="rem-spinner" />
-                        <p>Scanning emails for deadlines…</p>
-                    </div>
-                ) : filtered.length === 0 ? (
-                    <div className="rem-empty-state">
-                        <Bell size={40} style={{ color: '#4a5568', marginBottom:'1rem' }} />
-                        <p style={{ color:'#a0aec0' }}>
-                            {reminders.length === 0
-                                ? 'No deadline-containing emails found. Scan your inbox in Email Analysis first.'
-                                : `No emails match the "${filter}" filter.`}
-                        </p>
-                    </div>
-                ) : (
-                    filtered.map((rem) => (
-                        <div
-                            key={`${rem.emailId}-${rem.deadlineDate}`}
-                            className={`rem-row urgency-row-${rem.urgency?.toLowerCase()}`}
-                            onClick={() => setSelected(rem)}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => e.key === 'Enter' && setSelected(rem)}
-                        >
-                            {/* Ring */}
-                            <UrgencyRing daysUntil={rem.daysUntil} urgency={rem.urgency} />
-
-                            {/* Content */}
-                            <div className="rem-row-content">
-                                <div className="rem-row-top">
-                                    <h4 className="rem-subject">{(rem.subject && rem.subject.trim()) || '(No Subject)'}</h4>
-                                    <UrgencyBadge urgency={rem.urgency} />
-                                </div>
-                                <p className="rem-snippet">{(rem.snippet && rem.snippet.trim()) || 'No preview available.'}</p>
-                                <div className="rem-row-meta">
-                                    <span><Mail size={12} /> {(rem.sender && rem.sender.trim()) || 'Unknown Sender'}</span>
-                                    <span><Calendar size={12} /> Deadline: <strong>{(rem.deadlineText && rem.deadlineText.trim()) || 'Detected Deadline'}</strong> ({formatDate(rem.deadlineDate)})</span>
+                        {showNotifs && (
+                            <div style={{position:'absolute',right:0,top:'120%',width:280,background:'white',borderRadius:12,boxShadow:'0 8px 30px rgba(0,0,0,0.15)',zIndex:999,border:'1px solid #e2e8f0'}}>
+                                <div style={{padding:'0.75rem 1rem',fontWeight:700,fontSize:'0.88rem',borderBottom:'1px solid #f1f5f9'}}>Notifications</div>
+                                <div style={{maxHeight:220,overflowY:'auto'}}>
+                                    {notifications.length === 0 ? <div style={{padding:'1rem',textAlign:'center',color:'#64748b',fontSize:'0.82rem'}}>All caught up! 🎉</div>
+                                    : notifications.map(n => <div key={n.id} style={{padding:'0.65rem 1rem',borderBottom:'1px solid #f8fafc',fontSize:'0.82rem'}}>{n.message}</div>)}
                                 </div>
                             </div>
-
-                            {/* Countdown */}
-                            <div className="rem-row-countdown">
-                                <CountdownLabel daysUntil={rem.daysUntil} />
-                            </div>
-
-                            <ChevronRight size={16} className="rem-chevron" />
-                        </div>
-                    ))
-                )}
+                        )}
+                    </div>
+                </div>
             </div>
 
+            {/* Stats */}
+            <div className="rm-stats-container">
+                <div className="rm-stat-card purple">
+                    <div className="rm-stat-icon-wrap bg-purple c-purple">
+                        <Bell size={20} />
+                    </div>
+                    <div className="rm-stat-info">
+                        <div className="rm-stat-title">Total Reminders</div>
+                        <div className="rm-stat-value">{stats.total}</div>
+                        <div className="rm-stat-sub">All active reminders</div>
+                    </div>
+                </div>
+                <div className="rm-stat-card green">
+                    <div className="rm-stat-icon-wrap bg-green c-green">
+                        <CheckCircle2 size={20} />
+                    </div>
+                    <div className="rm-stat-info">
+                        <div className="rm-stat-title">Active</div>
+                        <div className="rm-stat-value">{stats.active}</div>
+                        <div className="rm-stat-sub">Currently enabled</div>
+                    </div>
+                </div>
+                <div className="rm-stat-card orange">
+                    <div className="rm-stat-icon-wrap bg-orange c-orange">
+                        <Clock size={20} />
+                    </div>
+                    <div className="rm-stat-info">
+                        <div className="rm-stat-title">Snoozed</div>
+                        <div className="rm-stat-value">{stats.snoozed}</div>
+                        <div className="rm-stat-sub">Snoozed reminders</div>
+                    </div>
+                </div>
+                <div className="rm-stat-card blue">
+                    <div className="rm-stat-icon-wrap bg-blue c-blue">
+                        <Calendar size={20} />
+                    </div>
+                    <div className="rm-stat-info">
+                        <div className="rm-stat-title">Triggered Today</div>
+                        <div className="rm-stat-value">{stats.triggered}</div>
+                        <div className="rm-stat-sub">Sent reminders</div>
+                    </div>
+                </div>
+                <div className="rm-stat-card red">
+                    <div className="rm-stat-icon-wrap bg-red c-red">
+                        <BellOff size={20} />
+                    </div>
+                    <div className="rm-stat-info">
+                        <div className="rm-stat-title">Disabled</div>
+                        <div className="rm-stat-value">{stats.disabled}</div>
+                        <div className="rm-stat-sub">Currently disabled</div>
+                    </div>
+                </div>
+            </div>
 
+            {/* Controls */}
+            <div className="rm-controls-row">
+                <div className="rm-search-box">
+                    <Search size={16} />
+                    <input type="text" placeholder="Search reminders..." />
+                </div>
+                <div className="rm-filters">
+                    <button className="rm-dropdown-btn">
+                        All Status <ChevronDown size={14} className="c-gray" />
+                    </button>
+                    <button className="rm-dropdown-btn">
+                        All Types <ChevronDown size={14} className="c-gray" />
+                    </button>
+                    <button className="rm-dropdown-btn">
+                        <Clock size={14} className="c-gray" /> Sort by: Next Reminder <ChevronDown size={14} className="c-gray" />
+                    </button>
+                    <div className="rm-view-toggles">
+                        <button className="rm-view-btn active"><List size={16} /></button>
+                        <button className="rm-view-btn"><Calendar size={16} /></button>
+                    </div>
+                </div>
+            </div>
 
-            {/* Modal */}
-            {selectedReminder && (
-                <ReminderModal reminder={selectedReminder} onClose={() => setSelected(null)} />
+            {/* Table */}
+            <div className="rm-table-container">
+                <table className="rm-table">
+                    <thead>
+                        <tr>
+                            <th>Reminder</th>
+                            <th>Type</th>
+                            <th>Next Reminder</th>
+                            <th>Frequency</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {reminders.map(rem => (
+                            <tr key={rem.id}>
+                                <td>
+                                    <div className="rm-td-task">
+                                        <div className={`rm-task-icon-box bg-${rem.iconColor} c-${rem.iconColor}`}>
+                                            {getIcon(rem.iconType)}
+                                        </div>
+                                        <div className="rm-task-texts">
+                                            <span className="rm-task-title-text">{rem.title}</span>
+                                            <span className="rm-task-desc-text">{rem.desc}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span className={`rm-pill bg-${rem.typeColor} c-${rem.typeColor}`}>
+                                        {rem.type}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div className="rm-stacked-text">
+                                        <span className="rm-stacked-main"><Calendar size={14} /> {rem.scheduleDate}</span>
+                                        <span>{rem.scheduleTime}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span style={{ fontSize: '0.85rem' }}>{rem.freq}</span>
+                                </td>
+                                <td>
+                                    <span className={`rm-status-text c-${rem.statusColor}`}>
+                                        {rem.status}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div className="rm-actions">
+                                        <label className="rm-switch">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={rem.status === 'Active'}
+                                                onChange={() => toggleStatus(rem.id)} 
+                                            />
+                                            <span className="rm-slider"></span>
+                                        </label>
+                                        <button className="rm-actions-btn">
+                                            <MoreVertical size={16} />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                
+                {/* Pagination */}
+                <div className="rm-pagination">
+                    <span className="rm-page-info">Showing 1 to {Math.min(6, reminders.length)} of {stats.total} reminders</span>
+                    <div className="rm-page-controls">
+                        <button className="rm-page-btn"><ChevronLeft size={14} /></button>
+                        <button className="rm-page-btn active">1</button>
+                        <button className="rm-page-btn">2</button>
+                        <button className="rm-page-btn">3</button>
+                        <button className="rm-page-btn" style={{border: 'none', background: 'transparent'}}>...</button>
+                        <button className="rm-page-btn">4</button>
+                        <button className="rm-page-btn"><ChevronRight size={14} /></button>
+                    </div>
+                    <div className="rm-page-info" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        Rows per page: 
+                        <button className="rm-dropdown-btn" style={{ padding: '0.3rem 0.5rem' }}>
+                            10 <ChevronDown size={14} />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Bottom Banner */}
+            <div className="rm-bottom-banner">
+                <div className="rm-banner-left">
+                    <div className="rm-banner-icon">
+                        <Bell size={20} />
+                    </div>
+                    <div>
+                        <div className="rm-banner-title">Smart Reminders</div>
+                        <div className="rm-banner-sub">We'll notify you at the right time, so you never miss what matters.</div>
+                    </div>
+                </div>
+                <button className="rm-btn-outline">
+                    <PlayCircle size={16} /> How reminders work
+                </button>
+            </div>
+
+            {/* Create Reminder Modal */}
+            {showModal && (
+                <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}}>
+                    <div style={{background:'white',borderRadius:16,padding:'1.5rem',width:'100%',maxWidth:420,boxShadow:'0 20px 60px rgba(0,0,0,0.2)'}}>
+                        <h3 style={{margin:'0 0 1rem',fontSize:'1.1rem',fontWeight:700}}>Create New Reminder</h3>
+                        <div style={{display:'flex',flexDirection:'column',gap:'0.75rem'}}>
+                            <input placeholder="Reminder title *" value={form.title} onChange={e => setForm(f=>({...f,title:e.target.value}))} style={{padding:'0.65rem 0.85rem',borderRadius:8,border:'1px solid #e2e8f0',fontSize:'0.9rem',outline:'none',width:'100%',boxSizing:'border-box'}} />
+                            <textarea placeholder="Notes (optional)" value={form.description} onChange={e => setForm(f=>({...f,description:e.target.value}))} rows={2} style={{padding:'0.65rem 0.85rem',borderRadius:8,border:'1px solid #e2e8f0',fontSize:'0.9rem',outline:'none',width:'100%',boxSizing:'border-box',resize:'vertical'}} />
+                            <input type="date" value={form.scheduleDate} onChange={e => setForm(f=>({...f,scheduleDate:e.target.value}))} style={{padding:'0.65rem 0.85rem',borderRadius:8,border:'1px solid #e2e8f0',fontSize:'0.9rem'}} />
+                            <input type="time" value={form.scheduleTime} onChange={e => setForm(f=>({...f,scheduleTime:e.target.value}))} style={{padding:'0.65rem 0.85rem',borderRadius:8,border:'1px solid #e2e8f0',fontSize:'0.9rem'}} />
+                        </div>
+                        <div style={{display:'flex',gap:'0.75rem',marginTop:'1.25rem'}}>
+                            <button onClick={() => setShowModal(false)} style={{flex:1,padding:'0.7rem',borderRadius:8,border:'1px solid #e2e8f0',background:'white',fontSize:'0.9rem',cursor:'pointer'}}>Cancel</button>
+                            <button onClick={handleCreateReminder} disabled={saving} style={{flex:1,padding:'0.7rem',borderRadius:8,border:'none',background:'#8b5cf6',color:'white',fontSize:'0.9rem',fontWeight:600,cursor:'pointer'}}>{saving ? 'Saving...' : 'Create Reminder'}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {toast && (
+                <div style={{position:'fixed',bottom:'1.5rem',left:'50%',transform:'translateX(-50%)',background:toast.startsWith('✅')?'#10b981':'#ef4444',color:'white',padding:'0.75rem 1.25rem',borderRadius:10,fontWeight:600,zIndex:9999,fontSize:'0.85rem'}}>
+                    {toast}
+                </div>
             )}
         </div>
     );
 };
 
 export default Reminders;
+

@@ -1,352 +1,825 @@
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Patrick+Hand&display=swap');
+/* ═══════════════════════════════════════════════
+   GENERATE TASKS PAGE – AutoTask Generator Style
+═══════════════════════════════════════════════ */
 
-/* =============================================
-   EXAM PAD / HANDWRITTEN THEME
-   ============================================= */
-
-.exam-pad-page {
-    min-height: calc(100vh - 70px);
-    display: flex;
-    background: #d6cfc4;
-    position: relative;
-    font-family: 'Caveat', cursive;
-}
-
-/* ---- Main Paper Area ---- */
-.pad-content.auto-tasks-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: transparent;
-    position: relative;
-    padding: 2rem 3rem 0 3rem;
-    overflow-y: auto;
-}
-
-/* ---- Header ---- */
-.pad-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2.5px dashed #8a6f4a;
-}
-
-.pad-title-area {
-    display: flex;
-    align-items: center;
-    gap: 0.9rem;
-}
-
-.pen-icon-wrap {
-    color: #3a5f8a;
-    display: flex;
-    align-items: center;
-    transform: rotate(-12deg);
-    filter: drop-shadow(1px 1px 0 rgba(0,0,0,0.15));
-}
-
-.pad-title {
-    font-family: 'Caveat', cursive;
-    font-size: 2.6rem;
-    font-weight: 700;
-    color: #1a3a5c;
-    margin: 0;
-    line-height: 1;
-    text-decoration: underline wavy #4a6fa5;
-    text-underline-offset: 5px;
-}
-
-.pad-subtitle {
-    font-family: 'Caveat', cursive;
-    font-size: 1.1rem;
-    color: #6b8fa8;
-    margin: 0.15rem 0 0 0;
-    font-style: italic;
-}
-
-/* ---- Search Bar ---- */
-.pad-search {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    background: rgba(255,255,255,0.85);
-    border: 1.5px solid #a8c4e0;
-    border-bottom: 2px solid #3a6fa5;
-    border-radius: 2px;
-    padding: 0.45rem 1rem;
-    width: 250px;
-    box-shadow: 2px 3px 8px rgba(0,0,0,0.07);
-}
-
-.pad-search input {
-    border: none; background: transparent; outline: none;
-    font-family: 'Caveat', cursive;
-    font-size: 1.15rem;
-    color: #1a3a5c;
-    width: 100%;
-}
-
-.pad-search input::placeholder { color: #a0b8cc; }
-.search-ink-icon { color: #6b8fa8; flex-shrink: 0; }
-
-/* ---- Task Counter ---- */
-.task-counter-line {
-    font-family: 'Caveat', cursive;
-    font-size: 1.05rem;
-    color: #8a6f4a;
-    margin-bottom: 1.5rem;
-    font-style: italic;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-/* ---- Task List ---- */
-.pad-task-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2.5rem;
-    padding-bottom: 4rem;
-}
-
-/* ---- Individual Task Item ---- */
-.task-paper-item {
-    background-color: #fffef5;
-    background-image:
-        linear-gradient(90deg, transparent 40px, #f08080 40px, #f08080 42px, transparent 42px),
-        repeating-linear-gradient(transparent, transparent 38.5px, #a8c8e8 38.5px, #a8c8e8 40px);
-    background-size: 100% 100%, 100% 40px;
-    background-position: 0 0;
-    
-    -webkit-mask-image: radial-gradient(circle at -2px 20px, transparent 6px, black 7px);
-    -webkit-mask-size: 100% 40px;
-    mask-image: radial-gradient(circle at -2px 20px, transparent 6px, black 7px);
-    mask-size: 100% 40px;
-
-    filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.15));
-    border-radius: 0 6px 6px 0;
-    
-    padding: 10px 1rem 0 50px;
-    min-height: 120px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    transition: transform 0.2s ease, filter 0.2s ease;
-    cursor: default;
-}
-
-.task-paper-item:hover {
-    filter: drop-shadow(4px 8px 12px rgba(0,0,0,0.2));
-}
-
-.paper-item-inner {
+.gt-page {
+  padding: 28px 32px;
+  min-height: 100vh;
+  background: #f4f6fb;
+  font-family: 'Inter', sans-serif;
   display: flex;
   flex-direction: column;
-  gap: 0px;
+  gap: 22px;
+  position: relative;
+}
+
+/* ── Toast Notification ── */
+.gt-toast {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.14);
+  max-width: 320px;
+}
+.gt-toast.success {
+  background: #fff;
+  border: 1.5px solid rgba(124,58,237,0.25);
+  color: #5b21b6;
+}
+.gt-toast.error {
+  background: #fff;
+  border: 1.5px solid rgba(239,68,68,0.3);
+  color: #dc2626;
+}
+
+/* ── Header ── */
+.gt-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.gt-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.gt-header-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.14), rgba(168,85,247,0.08));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7c3aed;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.gt-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 0;
+  letter-spacing: -0.4px;
+}
+
+.gt-subtitle {
+  font-size: 0.83rem;
+  color: #64748b;
+  margin: 4px 0 0;
+}
+
+.gt-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gt-how-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(124,58,237,0.22);
+  background: #fff;
+  color: #7c3aed;
+  font-size: 0.82rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s;
+}
+.gt-how-btn:hover {
+  background: rgba(124,58,237,0.06);
+  border-color: #7c3aed;
 }
 
-/* Checkbox Row */
-.paper-checkbox-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.85rem;
-    margin-bottom: 0;
-    min-height: 40px;
+.gt-notif-btn {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(124,58,237,0.15);
+  background: #fff;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.gt-notif-btn:hover { border-color: #7c3aed; color: #7c3aed; }
+
+.gt-notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  background: #7c3aed;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.6rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #f4f6fb;
 }
 
-/* Exam-style square checkbox */
-.paper-checkbox {
-    width: 22px;
-    height: 22px;
-    border: 2px solid #3a5f8a;
-    background: transparent;
-    border-radius: 3px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Caveat', cursive;
-    font-size: 1.1rem;
-    color: #1a5c1a;
-    flex-shrink: 0;
-    margin-top: 9px;
-    transition: all 0.2s;
-    font-weight: 700;
+/* ── Step Bar ── */
+.gt-stepbar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 14px;
+  padding: 16px 24px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
 }
 
-.paper-checkbox:hover {
-    background: rgba(58, 95, 138, 0.08);
-    transform: scale(1.08);
+.gt-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
-.paper-checkbox.checked {
-    background: rgba(26, 92, 26, 0.07);
-    border-color: #1a5c1a;
-    color: #1a5c1a;
+.gt-step-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  flex-shrink: 0;
 }
 
-/* Task Title */
-.paper-task-title {
-    font-family: 'Caveat', cursive;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1a2744;
-    margin: 0;
-    line-height: 40px;
-    flex: 1;
-    transition: all 0.3s;
+.gt-step.active .gt-step-circle {
+  background: #7c3aed;
+  border-color: #7c3aed;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(124,58,237,0.18);
 }
 
-.paper-task-title.strike {
-    text-decoration: line-through;
-    text-decoration-thickness: 2px;
-    color: #8a9ab0;
+.gt-step.done .gt-step-circle {
+  background: #7c3aed;
+  border-color: #7c3aed;
+  color: #fff;
 }
 
-/* Delete button */
-.paper-del-btn {
-    background: transparent;
-    border: none;
-    color: #c4a8a8;
-    cursor: pointer;
-    padding: 3px 5px;
-    border-radius: 3px;
-    transition: all 0.2s;
-    opacity: 0;
-    display: flex;
-    align-items: center;
-    margin-top: 8px;
+.gt-step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
-.task-paper-item:hover .paper-del-btn { opacity: 1; }
-.paper-del-btn:hover { color: #c0392b; background: rgba(192,57,43,0.08); }
-
-/* Meta row */
-.paper-meta-row {
-    display: flex;
-    align-items: center;
-    gap: 1.2rem;
-    padding-left: 0;
-    margin-top: 0;
-    font-family: 'Caveat', cursive;
-    font-size: 1rem;
-    flex-wrap: wrap;
-    line-height: 40px;
+.gt-step-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1a1a2e;
 }
 
-.paper-priority-tag {
-    font-weight: 700;
-    font-size: 0.95rem;
-    letter-spacing: 0.02em;
+.gt-step.active .gt-step-label { color: #7c3aed; }
+.gt-step.done .gt-step-label { color: #7c3aed; }
+
+.gt-step-sub {
+  font-size: 0.68rem;
+  color: #94a3b8;
 }
 
-.paper-source {
-    color: #8a9ab0;
-    font-style: italic;
-    max-width: 180px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.gt-step-line {
+  flex: 1;
+  height: 2px;
+  background: #e2e8f0;
+  margin: 0 16px;
+  border-radius: 99px;
+  transition: background 0.3s;
+}
+.gt-step-line.done { background: #7c3aed; }
+
+/* ── Body Layout ── */
+.gt-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
 }
 
-.paper-date {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    color: #8a6f4a;
-    font-size: 0.95rem;
+@media (max-width: 900px) {
+  .gt-body { grid-template-columns: 1fr; }
 }
 
-/* ---- Completed Stamp ---- */
-.is-done { opacity: 0.55; }
-
-.completed-stamp {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    padding: 0.8rem 0;
+/* ── Left Panel ── */
+.gt-left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.stamp-inner {
-    font-family: 'Caveat', cursive;
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #1a5c1a;
-    border: 3px solid #1a5c1a;
-    padding: 0.2rem 1.5rem;
-    border-radius: 6px;
-    opacity: 0.65;
-    letter-spacing: 0.06em;
-    background: rgba(26, 92, 26, 0.05);
-    transform: rotate(-2.5deg);
-    display: inline-block;
-    box-shadow: 1px 2px 0 rgba(0,0,0,0.08);
+.gt-form-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid rgba(0,0,0,0.07);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
 }
 
-/* ---- Empty State ---- */
-.pad-empty {
-    text-align: center;
-    padding: 5rem 2rem;
-    font-family: 'Caveat', cursive;
-    grid-column: 1 / -1;
+.gt-form-section-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 4px;
 }
 
-.empty-checkmark {
-    font-size: 4rem;
-    color: #1a5c1a;
-    display: block;
-    margin-bottom: 0.5rem;
+.gt-form-section-sub {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0 0 14px;
 }
 
-.pad-empty h2 {
-    font-size: 2.8rem;
-    color: #1a3a5c;
-    margin: 0 0 0.5rem 0;
-    text-decoration: underline wavy #4a6fa5;
-    text-underline-offset: 4px;
+/* Textarea */
+.gt-textarea-wrap {
+  border: 1.5px solid rgba(124,58,237,0.2);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.gt-textarea-wrap:focus-within {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
 }
 
-.pad-empty p {
-    font-size: 1.3rem;
-    color: #6b8fa8;
-    font-style: italic;
+.gt-textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  color: #1a1a2e;
+  background: #fff;
+  line-height: 1.6;
+  min-height: 110px;
+}
+.gt-textarea::placeholder { color: #94a3b8; }
+
+.gt-textarea-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #faf8ff;
+  border-top: 1px solid rgba(124,58,237,0.1);
 }
 
-.spin-icon {
-    animation: spin 1s linear infinite;
-    color: #4a6fa5;
-    margin-bottom: 1rem;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
+.gt-improve-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #7c3aed;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: opacity 0.2s;
+}
+.gt-improve-btn:hover { opacity: 0.75; }
+.gt-improve-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.gt-char-count {
+  font-size: 0.7rem;
+  color: #94a3b8;
 }
 
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+/* Field List */
+.gt-field-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-.is-processing { opacity: 0.7; }
+.gt-field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+  background: #fff;
+  transition: background 0.18s;
+}
+.gt-field-row:last-child { border-bottom: none; }
+.gt-field-row:hover { background: #faf8ff; }
 
-/* ---- Responsive ---- */
+.gt-field-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  flex-shrink: 0;
+  min-width: 140px;
+}
+
+.gt-field-icon { color: #7c3aed; flex-shrink: 0; }
+
+.gt-field-select-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 200px;
+}
+
+.gt-field-select {
+  width: 100%;
+  appearance: none;
+  border: none;
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  cursor: pointer;
+  outline: none;
+  padding-right: 20px;
+}
+
+.gt-select-arrow {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.gt-field-input {
+  flex: 1;
+  max-width: 200px;
+  border: none;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  color: #1a1a2e;
+  background: transparent;
+  padding: 0;
+}
+.gt-field-input::placeholder { color: #94a3b8; }
+
+/* Generate Button */
+.gt-generate-btn {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  transition: all 0.25s ease;
+  box-shadow: 0 6px 20px rgba(124,58,237,0.35);
+  letter-spacing: 0.01em;
+}
+.gt-generate-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(124,58,237,0.45);
+}
+.gt-generate-btn:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+
+.gt-secure-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* ── Right Panel ── */
+.gt-right-panel {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.07);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.gt-right-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.gt-right-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.gt-right-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.gt-right-sub {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.gt-tasks-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: rgba(124,58,237,0.1);
+  color: #7c3aed;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Task list */
+.gt-tasks-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 420px;
+}
+
+/* Empty / loading states */
+.gt-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 10px;
+  text-align: center;
+}
+
+.gt-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: rgba(124,58,237,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a855f7;
+  margin-bottom: 4px;
+}
+
+.gt-empty-state p {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.gt-empty-state span {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.gt-gen-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 48px;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+/* ── AI Task Card ── */
+.gt-task-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  transition: background 0.18s;
+  cursor: default;
+}
+.gt-task-card:last-child { border-bottom: none; }
+.gt-task-card:hover { background: #faf8ff; }
+.gt-task-card.gt-task-selected { background: rgba(124,58,237,0.03); }
+
+.gt-tc-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.gt-tc-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gt-tc-body { flex: 1; min-width: 0; }
+
+.gt-tc-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 3px;
+}
+
+.gt-tc-desc {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0 0 8px;
+  line-height: 1.45;
+}
+
+.gt-tc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gt-tc-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 99px;
+  background: rgba(124,58,237,0.07);
+  color: #5b21b6;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.gt-tc-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.gt-tc-check {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s;
+}
+.gt-tc-check:hover { transform: scale(1.1); }
+
+.gt-tc-edit, .gt-tc-delete {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: all 0.18s;
+}
+.gt-tc-edit:hover { border-color: #7c3aed; color: #7c3aed; background: rgba(124,58,237,0.06); }
+.gt-tc-delete:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.06); }
+
+/* ── Edit Card ── */
+.gt-edit-card {
+  padding: 16px 20px;
+  background: #faf8ff;
+  border-bottom: 1px solid rgba(124,58,237,0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gt-edit-title {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid rgba(124,58,237,0.3);
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  outline: none;
+  background: #fff;
+}
+.gt-edit-title:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.1); }
+
+.gt-edit-desc {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid rgba(124,58,237,0.2);
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  color: #374151;
+  outline: none;
+  resize: none;
+  background: #fff;
+}
+.gt-edit-desc:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.1); }
+
+.gt-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.gt-edit-save {
+  padding: 7px 18px;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.gt-edit-save:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(124,58,237,0.3); }
+
+.gt-edit-cancel {
+  padding: 7px 16px;
+  background: #fff;
+  border: 1.5px solid rgba(0,0,0,0.12);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.gt-edit-cancel:hover { border-color: #94a3b8; color: #374151; }
+
+/* ── Tip Banner ── */
+.gt-tip-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 20px;
+  background: rgba(124,58,237,0.05);
+  border-top: 1px solid rgba(124,58,237,0.1);
+}
+
+.gt-tip-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #5b21b6;
+  margin: 0 0 2px;
+}
+
+.gt-tip-sub {
+  font-size: 0.7rem;
+  color: #7c3aed;
+  margin: 0;
+}
+
+/* ── Bottom Action Bar ── */
+.gt-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(0,0,0,0.07);
+  background: #fff;
+}
+
+.gt-bottom-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gt-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(0,0,0,0.12);
+  background: #fff;
+  color: #374151;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.gt-back-btn:hover { border-color: #94a3b8; background: #f8fafc; }
+
+.gt-regen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(124,58,237,0.28);
+  background: #fff;
+  color: #7c3aed;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.gt-regen-btn:hover:not(:disabled) {
+  background: rgba(124,58,237,0.06);
+  border-color: #7c3aed;
+}
+.gt-regen-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.gt-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 22px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.3);
+}
+.gt-save-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(124,58,237,0.42);
+}
+.gt-save-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ── Spin Animation ── */
+.spin-anim {
+  animation: spinLoop 0.85s linear infinite;
+}
+@keyframes spinLoop {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Responsive ── */
 @media (max-width: 768px) {
-    .pad-content.auto-tasks-container {
-        padding: 1.5rem 1.2rem 0 1.2rem;
-    }
-
-    .pad-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.8rem;
-    }
-
-    .pad-search { width: 100%; }
-    .pad-title { font-size: 1.9rem; }
-    
-    .pad-task-grid {
-        grid-template-columns: 1fr;
-    }
+  .gt-page { padding: 16px; gap: 16px; }
+  .gt-body { grid-template-columns: 1fr; }
+  .gt-stepbar { padding: 12px 16px; overflow-x: auto; }
+  .gt-step-sub { display: none; }
+  .gt-step-line { min-width: 24px; }
+  .gt-bottom-bar { flex-direction: column; gap: 8px; }
+  .gt-bottom-right { width: 100%; justify-content: space-between; }
+  .gt-back-btn, .gt-regen-btn, .gt-save-btn { flex: 1; justify-content: center; }
 }

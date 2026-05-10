@@ -32,36 +32,6 @@ public class GeminiService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // ─── Shared Gemini REST helper ────────────────────────────────────────────
-    private String callGeminiApi(String apiKey, String prompt) throws Exception {
-        String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey;
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        Map<String, Object> part = new HashMap<>();
-        part.put("text", prompt);
-
-        Map<String, Object> contentBlock = new HashMap<>();
-        contentBlock.put("parts", List.of(part));
-
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("contents", List.of(contentBlock));
-
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(geminiUrl, request, String.class);
-
-        JsonNode root = objectMapper.readTree(response.getBody());
-        JsonNode candidates = root.path("candidates");
-        if (candidates.isMissingNode() || !candidates.has(0)) {
-            throw new Exception("No candidates returned from Gemini API");
-        }
-        JsonNode parts = candidates.get(0).path("content").path("parts");
-        if (parts.isMissingNode() || !parts.has(0)) {
-            throw new Exception("Empty parts from Gemini API");
-        }
-        return parts.get(0).path("text").asText();
-    }
 
     // ─── Clean up Markdown JSON fences ───────────────────────────────────────
     private String stripMarkdownJson(String text) {

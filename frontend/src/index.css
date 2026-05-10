@@ -48,6 +48,7 @@
 
   /* Layout */
   --navbar-height: 70px;
+  --sidebar-width: 220px;
 
   /* Radii */
   --r-sm:  8px;
@@ -211,29 +212,18 @@ body::before {
   min-height: 100vh;
   position: relative;
   z-index: 1;
-  /* Modern, attractive glowing background for the outer layout padding */
-  background-image: 
-    radial-gradient(circle at 0% 0%, rgba(124, 58, 237, 0.15) 0%, transparent 45%),
-    radial-gradient(circle at 100% 100%, rgba(245, 158, 11, 0.12) 0%, transparent 45%),
-    linear-gradient(135deg, #F0EDF7 0%, #EAE5F9 100%);
-  background-size: 200% 200%;
-  animation: gradientMove 15s ease infinite alternate;
+  background: #f4f6fb;
 }
 
 .main-content {
   flex-grow: 1;
-  margin-left: 0;
-  padding: 3rem; /* Increased padding */
-  padding-top: calc(var(--navbar-height) + 3rem); /* Increased top padding accordingly */
+  margin-left: var(--sidebar-width);
+  padding: 0;
   position: relative;
   z-index: 1;
-  /* Crisp, popping background that cleanly separates from the outer ambient glow */
-  background: #FFFFFF;
+  background: #f4f6fb;
   min-height: 100vh;
-  border-radius: 40px 0 0 0; /* Beautiful rounded corner */
-  box-shadow: -12px 10px 40px rgba(124, 58, 237, 0.08); /* Premium 3D drop shadow */
-  border-left: 2px solid rgba(255, 255, 255, 0.9);
-  border-top: 2px solid rgba(255, 255, 255, 0.9);
+  overflow-x: hidden;
 }
 
 .page-container { max-width: 1200px; }
@@ -359,7 +349,15 @@ input:focus, select:focus, textarea:focus {
    RESPONSIVE
 ═══════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .main-content { margin-left: 0; padding: 1rem; padding-top: 6rem; padding-bottom: 8rem; border-radius: 0; box-shadow: none; border: none; }
+  .main-content {
+    margin-left: 0;
+    padding: 1rem;
+    padding-top: 1rem;
+    padding-bottom: 80px;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+  }
   .page-header h1 { font-size: 1.4rem; }
 }
 
