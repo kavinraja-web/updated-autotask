@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
-    LayoutDashboard, Zap, ListChecks, CalendarClock, Puzzle, History,
-    Settings, HelpCircle, LogOut, Sun, Moon, ChevronDown, Bell, ShieldCheck, Mail
+    LayoutDashboard, Mail, CheckSquare, CheckCircle, Bell,
+    LogOut, Settings, Zap, Menu, X, Sun, Moon,
+    HelpCircle, MessageSquare, User
 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import './Sidebar.css';
@@ -10,135 +11,191 @@ import './Sidebar.css';
 const Sidebar = ({ onLogout }) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const settingsRef = useRef(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    const userEmail = localStorage.getItem('user_email') || 'user@example.com';
+    const [isDarkMode, setIsDarkMode] = useState(() =>
+        localStorage.getItem('theme') === 'dark'
+    );
+    const settingsRef = useRef(null);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    const handleLogout = () => {
+        if (onLogout) onLogout();
+    };
+
+    const navItems = [
+        { name: 'Dashboard',      path: '/dashboard', icon: <LayoutDashboard size={20} /> },
+        { name: 'Email Analysis', path: '/emails',    icon: <Mail size={20} /> },
+        { name: 'Approvals',      path: '/drafts',    icon: <CheckSquare size={20} /> },
+        { name: 'Auto Tasks',     path: '/tasks',     icon: <CheckCircle size={20} /> },
+        { name: 'Reminders',      path: '/reminders', icon: <Bell size={20} /> },
+    ];
+
+    const userEmail = localStorage.getItem('user_email') || 'User';
+    const initials = userEmail.charAt(0).toUpperCase();
     const userName = userEmail.split('@')[0];
-    const initials = userName.charAt(0).toUpperCase();
 
     useEffect(() => {
-        if (isDarkMode) { document.body.classList.add('dark-mode'); localStorage.setItem('theme', 'dark'); }
-        else { document.body.classList.remove('dark-mode'); localStorage.setItem('theme', 'light'); }
+        if (isDarkMode) {
+            document.body.classList.add('dark-mode');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.body.classList.remove('dark-mode');
+            localStorage.setItem('theme', 'light');
+        }
     }, [isDarkMode]);
 
     useEffect(() => {
         const handleClickOutside = (e) => {
-            if (settingsRef.current && !settingsRef.current.contains(e.target)) setIsSettingsOpen(false);
+            if (settingsRef.current && !settingsRef.current.contains(e.target)) {
+                setIsSettingsOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const navItems = [
-        { name: 'Dashboard',       path: '/dashboard', icon: <LayoutDashboard size={18} /> },
-        { name: 'Generate Tasks',  path: '/tasks',     icon: <Zap size={18} /> },
-        { name: 'My Tasks',        path: '/mytasks',   icon: <ListChecks size={18} /> },
-        { name: 'Email Analysis',  path: '/emails',    icon: <Mail size={18} /> },
-        { name: 'Reminders',       path: '/reminders', icon: <Bell size={18} /> },
-        { name: 'Approvals',       path: '/approvals', icon: <ShieldCheck size={18} /> },
-        { name: 'History',         path: '/history',   icon: <History size={18} />, disabled: true },
-    ];
-
-    // Mobile nav: show Dashboard, Tasks, My Tasks, Approvals, Reminders (5 most important)
-    const mobileNavItems = [
-        { name: 'Home',      path: '/dashboard', icon: <LayoutDashboard size={20} /> },
-        { name: 'Generate',  path: '/tasks',     icon: <Zap size={20} /> },
-        { name: 'Tasks',     path: '/mytasks',   icon: <ListChecks size={20} /> },
-        { name: 'Approvals', path: '/approvals', icon: <ShieldCheck size={20} /> },
-        { name: 'Reminders', path: '/reminders', icon: <Bell size={20} /> },
-    ];
-
     return (
         <>
             {/* ── Desktop Sidebar ── */}
             <aside className="sidebar-desktop">
-                {/* Brand */}
-                <div className="sb-brand">
-                    <div className="sb-logo">
-                        <Zap size={18} strokeWidth={2.5} />
+                {/* Logo */}
+                <div className="sd-logo-block">
+                    <div className="sd-logo-icon">
+                        <Zap size={20} />
                     </div>
-                    <div className="sb-brand-text">
-                        <span className="sb-brand-name">AutoTask</span>
-                        <span className="sb-brand-sub">Generator</span>
+                    <div className="sd-logo-text">
+                        <span className="sd-logo-title">SmartTask AI</span>
+                        <span className="sd-logo-sub">Email → Task Automation</span>
                     </div>
                 </div>
 
-                {/* Nav */}
-                <nav className="sb-nav">
-                    {navItems.map((item) =>
-                        item.disabled ? (
-                            <div key={item.path} className="sb-nav-item sb-nav-disabled">
-                                <span className="sb-nav-icon">{item.icon}</span>
-                                <span>{item.name}</span>
-                            </div>
-                        ) : (
-                            <NavLink
-                                key={item.path}
-                                to={item.path}
-                                className={({ isActive }) => `sb-nav-item${isActive ? ' active' : ''}`}
-                            >
-                                <span className="sb-nav-icon">{item.icon}</span>
-                                <span>{item.name}</span>
-                            </NavLink>
-                        )
-                    )}
+                {/* Navigation */}
+                <nav className="sd-nav" aria-label="Main Navigation">
+                    {navItems.map(item => (
+                        <NavLink
+                            key={item.path}
+                            to={item.path}
+                            className={({ isActive }) => `sd-nav-item ${isActive ? 'sd-active' : ''}`}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                            <span className="sd-nav-icon">{item.icon}</span>
+                            <span className="sd-nav-label">{item.name}</span>
+                        </NavLink>
+                    ))}
                 </nav>
 
-                {/* Bottom */}
-                <div className="sb-bottom">
-                    {/* Upgrade Banner */}
-                    <div className="sb-upgrade-card">
-                        <div className="sb-upgrade-icon">
-                            <Zap size={16} />
-                        </div>
-                        <p className="sb-upgrade-title">Upgrade to Pro</p>
-                        <p className="sb-upgrade-desc">Unlock advanced features and boost productivity.</p>
-                        <button className="sb-upgrade-btn" onClick={() => {}}>
-                            Upgrade Now <span>→</span>
+                {/* Spacer */}
+                <div style={{ flex: 1 }} />
+
+
+                {/* Bottom Links */}
+                <div className="sd-bottom-links">
+                    <div className="sd-bottom-links-group" ref={settingsRef}>
+                        <button
+                            className={`sd-nav-item sd-nav-btn ${isSettingsOpen ? 'sd-active' : ''}`}
+                            onClick={() => setIsSettingsOpen(v => !v)}
+                        >
+                            <span className="sd-nav-icon"><Settings size={20} /></span>
+                            <span className="sd-nav-label">Settings</span>
                         </button>
+
+                        {isSettingsOpen && (
+                            <div className="sd-settings-popup">
+                                <div className="sd-settings-header">Quick Settings</div>
+                                <button className="sd-settings-item" onClick={() => setIsDarkMode(!isDarkMode)}>
+                                    <span className="sd-settings-icon">{isDarkMode ? <Sun size={15} /> : <Moon size={15} />}</span>
+                                    <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                                    <div className={`sd-toggle ${isDarkMode ? 'on' : ''}`}>
+                                        <div className="sd-toggle-knob" />
+                                    </div>
+                                </button>
+                                <div className="sd-settings-divider" />
+                                <button className="sd-settings-item danger" onClick={handleLogout}>
+                                    <span className="sd-settings-icon"><LogOut size={15} /></span>
+                                    <span>Sign Out</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
 
-                    {/* User Footer */}
-                    <div className="sb-user-row">
-                        <div className="sb-user-avatar">{initials}</div>
-                        <div className="sb-user-info">
-                            <span className="sb-user-name">{userName}</span>
-                            <span className="sb-user-email">{userEmail}</span>
-                        </div>
-                        <div className="sb-user-actions" ref={settingsRef}>
-                            <button
-                                className="sb-icon-btn"
-                                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                                title="Settings"
-                            >
-                                <ChevronDown size={14} />
-                            </button>
-                            {isSettingsOpen && (
-                                <div className="sb-settings-dropdown animate-fade-in">
-                                    <button className="sb-dropdown-item" onClick={() => setIsDarkMode(!isDarkMode)}>
-                                        {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
-                                        {isDarkMode ? 'Light Mode' : 'Dark Mode'}
-                                    </button>
-                                    <div className="sb-dropdown-divider" />
-                                    <button className="sb-dropdown-item sb-logout-item" onClick={onLogout}>
-                                        <LogOut size={14} /> Sign Out
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <button className="sd-nav-item sd-nav-btn" onClick={() => {}}>
+                        <span className="sd-nav-icon"><HelpCircle size={20} /></span>
+                        <span className="sd-nav-label">Help Center</span>
+                    </button>
+
+                    <button className="sd-feedback-btn" onClick={() => {}}>
+                        <MessageSquare size={16} />
+                        Give Feedback
+                    </button>
                 </div>
             </aside>
 
-            {/* ── Mobile Bottom Nav ── */}
-            <nav className="sb-mobile-nav">
-                {mobileNavItems.map((item) => (
+            {/* ── Mobile Top Bar ── */}
+            <header className="sidebar-mobile-topbar">
+                <div className="sd-logo-block">
+                    <div className="sd-logo-icon">
+                        <Zap size={18} />
+                    </div>
+                    <div className="sd-logo-text">
+                        <span className="sd-logo-title">SmartTask AI</span>
+                        <span className="sd-logo-sub">Email → Task Automation</span>
+                    </div>
+                </div>
+
+                <div className="mobile-topbar-right">
+                    <NotificationBell />
+                    <div className="topbar-user-chip">
+                        <div className="topbar-user-avatar">{initials}</div>
+                        <div className="topbar-user-info">
+                            <div className="topbar-user-name">{userName}</div>
+                            <div className="topbar-user-status">
+                                <span className="topbar-status-dot" />
+                                Gmail Connected
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        className="mobile-menu-btn"
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        aria-label="Toggle menu"
+                    >
+                        {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+                    </button>
+                </div>
+            </header>
+
+            {/* Mobile Overlay Menu */}
+            {isMobileMenuOpen && (
+                <div className="mobile-overlay-menu" role="dialog" aria-modal="true">
+                    <div className="mobile-overlay-inner">
+                        {navItems.map(item => (
+                            <NavLink
+                                key={item.path}
+                                to={item.path}
+                                className={({ isActive }) => `mobile-nav-item ${isActive ? 'mobile-nav-active' : ''}`}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                                {item.icon}
+                                {item.name}
+                            </NavLink>
+                        ))}
+                        <div className="mobile-nav-divider" />
+                        <button className="mobile-nav-item danger" onClick={handleLogout}>
+                            <LogOut size={20} /> Logout
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Mobile Bottom Nav */}
+            <nav className="sidebar-mobile-bottom" aria-label="Mobile Navigation">
+                {navItems.map(item => (
                     <NavLink
                         key={item.path}
                         to={item.path}
-                        className={({ isActive }) => `sb-mob-item${isActive ? ' active' : ''}`}
+                        className={({ isActive }) => `mob-nav-item ${isActive ? 'mob-active' : ''}`}
+                        onClick={() => setIsMobileMenuOpen(false)}
                     >
                         {item.icon}
                         <span>{item.name}</span>

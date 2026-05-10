@@ -159,27 +159,26 @@ public class GeminiService {
 
         String prompt = "You are an Autonomous Email Agent connected to Gmail.\n" +
                 "Your role is to analyze emails, generate tasks, and intelligently handle replies.\n\n" +
-                "🎯 CORE GOAL:\n" +
-                "Reduce user workload by deciding when to reply and taking action if permitted.\n\n" +
+                "🔍 STEP 1: CATEGORY DETECTION (CRITICAL)\n" +
+                "Classify the email into one of these exact categories:\n" +
+                "- 'task': requires the user to do actionable work (e.g., 'Submit report').\n" +
+                "- 'reminder': upcoming events or meetings.\n" +
+                "- 'notification': important alerts, attendance warnings.\n" +
+                "- 'holiday': college holidays, festival greetings, celebration notices.\n" +
+                "- 'general': normal non-actionable chat.\n" +
+                "- 'spam': newsletters, promotions.\n\n" +
+                "🎯 STEP 2: DECIDE ACTION\n" +
+                "Based on the category, decide the action:\n" +
+                "- If category is 'task' or 'reminder' → set action to 'task'\n" +
+                "- If category is 'holiday', 'spam', or 'general' → MUST set action to 'ignore'\n\n" +
                 "⚙️ PERMISSION SYSTEM:\n" +
                 "You MUST follow this rule strictly:\n" +
                 "- If \"auto_send\" = false → ONLY generate reply draft\n" +
                 "- If \"auto_send\" = true → Generate reply AND mark it ready to send\n\n" +
                 "NEVER send emails without explicit permission.\n\n" +
-                "🧠 DECISION PROCESS:\n" +
-                "1. Understand the email\n" +
-                "   - Is a reply needed?\n" +
-                "   - Urgency level?\n" +
-                "   - Sender importance?\n\n" +
-                "2. Decide action:\n" +
-                "   - reply\n" +
-                "   - task\n" +
-                "   - ignore\n\n" +
-                "3. If reply is needed:\n" +
-                "   - Write a clear, professional response\n" +
-                "   - Match tone (formal / friendly)\n\n" +
-                "📦 OUTPUT FORMAT:\n" +
+                "📦 OUTPUT FORMAT (JSON ONLY):\n" +
                 "{\n" +
+                "  \"category\": \"task | reminder | notification | holiday | general | spam\",\n" +
                 "  \"action\": \"reply | task | ignore\",\n" +
                 "  \"reply_needed\": true,\n" +
                 "  \"reply_draft\": \"\",\n" +
@@ -189,17 +188,11 @@ public class GeminiService {
                 "  \"priority\": \"High | Medium | Low\",\n" +
                 "  \"confidence\": \"high | medium | low\"\n" +
                 "}\n\n" +
-                "🚀 AUTO-SEND LOGIC:\n" +
-                "- If auto_send = true AND reply_needed = true:\n" +
-                "    → set \"send_email\": true\n\n" +
-                "- If auto_send = false:\n" +
-                "    → set \"send_email\": false\n\n" +
                 "⚡ RULES:\n" +
                 "- Never hallucinate details\n" +
                 "- Keep replies concise and professional\n" +
                 "- If unsure → set confidence = low and DO NOT send\n" +
-                "- Avoid risky or sensitive replies automatically\n" +
-                "- If an explicit or implicit deadline/reminder is found in the email, extract it to 'deadline' field in ISO-8601 format relative to current time.\n\n" +
+                "- If an explicit or implicit deadline/reminder is found, extract it to 'deadline' field in ISO-8601 format relative to current time.\n\n" +
                 "[SYSTEM CONFIG] auto_send = " + autoSend + "\n\n" +
                 "Email Subject: " + subject + "\n" +
                 "Email Body: " + (body != null ? body.substring(0, Math.min(body.length(), 3000)) : "(no body)");
@@ -208,7 +201,7 @@ public class GeminiService {
             String responseContent = callOpenRouterApi(openrouterTaskApiKey, prompt);
             responseContent = stripMarkdownJson(responseContent);
             TaskAnalysisResult result = objectMapper.readValue(responseContent, TaskAnalysisResult.class);
-            System.out.println("[AI Service] ✅ Action: " + result.getAction() + " | Reply Needed: " + result.isReply_needed());
+            System.out.println("[AI Service] ✅ Category: " + result.getCategory() + " | Action: " + result.getAction());
             return result;
         } catch (Exception e) {
             System.err.println("[AI Service] Task API error: " + e.getMessage() + ". Using intelligent fallback.");
@@ -344,6 +337,7 @@ public class GeminiService {
 
     // ─── DTO ──────────────────────────────────────────────────────────────────
     public static class TaskAnalysisResult {
+        private String category;
         private String action;
         private boolean reply_needed;
         private String reply_draft;
@@ -353,6 +347,8 @@ public class GeminiService {
         private String summary;
         private String priority;
 
+        public String getCategory() { return category; }
+        public void setCategory(String category) { this.category = category; }
         public String getAction() { return action; }
         public void setAction(String action) { this.action = action; }
         public boolean isReply_needed() { return reply_needed; }

@@ -12,8 +12,6 @@ import Dashboard from './pages/Dashboard';
 import EmailAnalysis from './pages/EmailAnalysis';
 import AutoTaskList from './pages/AutoTaskList';
 import Reminders from './pages/Reminders';
-import Approvals from './pages/Approvals';
-import MyTasks from './pages/MyTasks';
 import Login from './pages/Login';
 import ProductivityTrends from './pages/ProductivityTrends';
 import AiInsights from './pages/AiInsights';
@@ -103,19 +101,9 @@ function App() {
             </ErrorBoundary>
           } />
           <Route path="/tasks" element={<AutoTaskList />} />
-          <Route path="/mytasks" element={
-            <ErrorBoundary>
-              <MyTasks />
-            </ErrorBoundary>
-          } />
           <Route path="/reminders" element={
             <ErrorBoundary>
               <Reminders />
-            </ErrorBoundary>
-          } />
-          <Route path="/approvals" element={
-            <ErrorBoundary>
-              <Approvals />
             </ErrorBoundary>
           } />
         </Routes>

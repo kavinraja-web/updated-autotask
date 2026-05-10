@@ -116,6 +116,23 @@ public class TaskAutomationScheduler {
             }
 
             try {
+                // Rule-Based Pre-filtering Layer
+                String subjectLow = emailLog.getSubject() != null ? emailLog.getSubject().toLowerCase() : "";
+                String senderLow = emailLog.getSender() != null ? emailLog.getSender().toLowerCase() : "";
+
+                boolean isHolidayOrSpam = subjectLow.contains("holiday") || subjectLow.contains("leave") ||
+                        subjectLow.contains("celebration") || subjectLow.contains("greetings") ||
+                        subjectLow.contains("festival") || subjectLow.contains("announcement") ||
+                        subjectLow.contains("newsletter") || subjectLow.contains("circular") ||
+                        senderLow.contains("principal");
+
+                if (isHolidayOrSpam) {
+                    System.out.println("[AI Analyzer] 🛑 Pre-filtered (Rule-Based): " + emailLog.getSubject());
+                    emailLog.setAiStatus(EmailLog.AiStatus.IGNORED);
+                    emailLogRepository.save(emailLog);
+                    continue; // Skip AI call entirely
+                }
+
                 GeminiService.TaskAnalysisResult result = geminiService.analyzeEmailForTask(
                         emailLog.getSubject(), emailLog.getBody(), false);
 

@@ -1,366 +1,493 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-    Sparkles, Bell, CheckCircle2, Clock, ArrowUpRight, ArrowDownRight,
-    ArrowLeft, Search, Filter, Mail, Briefcase, Info, Users,
-    ExternalLink, Edit3, Send, ZoomIn, ZoomOut, Maximize2, Trash2
+    Mail, RefreshCw, Cpu, Search, Bell, ChevronDown, Filter,
+    ChevronLeft, ChevronRight, Star, Archive, MoreHorizontal, Calendar, Inbox,
+    CheckCircle, Tag, Zap, Plus, FileText, Download, MessageSquare
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import axios from 'axios';
 import './EmailAnalysis.css';
 
 const EmailAnalysis = () => {
     const [emails, setEmails] = useState([]);
-    const [selectedIndex, setSelectedIndex] = useState(0);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('summary');
-    const [view, setView] = useState('list'); // mobile: 'list' | 'detail'
-    const [analyzeStatus, setAnalyzeStatus] = useState('idle');
-    const [taskStatus, setTaskStatus] = useState('idle');
-    const [toast, setToast] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState('All');
+    const [selectedEmail, setSelectedEmail] = useState(null);
+    const [detailLoading, setDetailLoading] = useState(false);
+    
+    // AI Reply state
+    const [aiReplyDraft, setAiReplyDraft] = useState('');
+    const [isGeneratingReply, setIsGeneratingReply] = useState(false);
+    const [isSending, setIsSending] = useState(false);
+    const [sendSuccess, setSendSuccess] = useState(false);
 
-    const mockEmails = [
-        { id: 'mock-1', subject: 'GenAI Product at Best Price Today', sender: 'Parikh Jain <no-reply@propeers.in>', snippet: 'This is the body of the email. It contains details...', processedAt: new Date().toISOString(), aiStatus: 'ANALYZED', category: 'Promotional' },
-        { id: 'mock-2', subject: 'Participate in Zerobreach CTF 2026 – Showcase...', sender: 'CSE Department', snippet: 'Dear Students, We are excited to inform you...', processedAt: new Date(Date.now() - 3600000).toISOString(), aiStatus: 'ANALYZED', category: 'Informational' },
-        { id: 'mock-3', subject: 'Join the Hack-to-Skill Mega Hackathon', sender: 'CSE Department', snippet: 'Dear Students, We are pleased to share an...', processedAt: new Date(Date.now() - 7200000).toISOString(), aiStatus: 'ANALYZED', category: 'Informational' },
-    ];
+    const userEmail = localStorage.getItem('user_email') || 'kavinraja.250194@gmail.com';
+    const userName = userEmail.split('@')[0];
+    const initials = userName.charAt(0).toUpperCase();
 
-    const showToast = (msg, type = 'success') => {
-        setToast({ msg, type });
-        setTimeout(() => setToast(null), 4000);
+    // ─── Fetch emails ────────────────────────────────────────────
+    const fetchEmails = useCallback(() => {
+        setLoading(true);
+        axios.get('/api/emails')
+            .then(res => setEmails(res.data))
+            .catch(err => console.error('Failed to fetch emails:', err))
+            .finally(() => setLoading(false));
+    }, []);
+
+    useEffect(() => {
+        fetchEmails();
+    }, [fetchEmails]);
+
+    // ─── Sync & Analyze ─────────────────────────────────────────
+    const syncInbox = () => {
+        setIsSyncing(true);
+        axios.post('/api/emails/sync-inbox')
+            .then(() => fetchEmails())
+            .catch(err => console.error('Sync failed:', err))
+            .finally(() => setIsSyncing(false));
     };
 
-    const fetchEmails = async () => {
-        try {
-            const res = await axios.get('/api/emails');
-            if (res.data && res.data.length > 0) setEmails(res.data);
-            else setEmails([]);
-        } catch { setEmails([]); }
-        finally { setLoading(false); }
-    };
-
-    useEffect(() => { fetchEmails(); }, []);
-
-    const handleAnalyze = async () => {
-        if (analyzeStatus === 'loading') return;
-        setAnalyzeStatus('loading');
-        try {
-            const res = await axios.post('/api/emails/analyze');
-            showToast(`✅ Analysis started! ${res.data.pendingEmails ?? 0} email(s) queued.`, 'success');
-            setAnalyzeStatus('done');
-            setTimeout(() => { fetchEmails(); setAnalyzeStatus('idle'); }, 4000);
-        } catch (err) {
-            showToast(`❌ ${err.response?.data?.error || 'Analysis failed. Check Gmail connection.'}`, 'error');
-            setAnalyzeStatus('idle');
-        }
-    };
-
-    const handleCreateTask = async () => {
-        if (taskStatus === 'loading') return;
-        setTaskStatus('loading');
-        try {
-            await axios.post('/api/tasks', {
-                title: `Review: ${getSubject(activeEmail)}`,
-                description: getBodyText(activeEmail).substring(0, 500),
-                priority: 'Medium', status: 'Pending',
-                emailSource: getSender(activeEmail),
-                deadline: new Date(Date.now() + 86400000).toISOString().slice(0, 19)
+    const triggerAiAnalysis = () => {
+        setIsAnalyzing(true);
+        axios.post('/api/emails/analyze')
+            .then(() => {
+                let attempts = 0;
+                const poll = setInterval(() => {
+                    attempts++;
+                    fetchEmails();
+                    if (attempts >= 10) {
+                        clearInterval(poll);
+                        setIsAnalyzing(false);
+                    }
+                }, 5000);
+            })
+            .catch(err => {
+                console.error('AI analysis trigger failed:', err);
+                setIsAnalyzing(false);
             });
-            showToast('✅ Task created from this email!', 'success');
-            setTaskStatus('done');
-            setTimeout(() => setTaskStatus('idle'), 4000);
-        } catch {
-            showToast('❌ Failed to create task.', 'error');
-            setTaskStatus('idle');
+    };
+
+    // ─── Select Email ───────────────────────────────────────────
+    const handleEmailClick = (email) => {
+        setSelectedEmail(email); // Set optimistic
+        setDetailLoading(true);
+        setAiReplyDraft('');
+        
+        axios.get(`/api/emails/${email.id}`)
+            .then(res => setSelectedEmail(res.data))
+            .catch(err => console.error('Failed to load body', err))
+            .finally(() => setDetailLoading(false));
+    };
+
+    // ─── AI Reply Logic ─────────────────────────────────────────
+    const handleGenerateReply = () => {
+        if (!selectedEmail) return;
+        setIsGeneratingReply(true);
+        setSendSuccess(false);
+        axios.post('/api/agent/generate-reply', {
+            subject: selectedEmail.subject,
+            body: selectedEmail.body || selectedEmail.snippet || ''
+        }).then(res => {
+            setAiReplyDraft(res.data.reply);
+        }).catch(err => {
+            console.error('Failed to generate reply:', err);
+            setAiReplyDraft('Failed to generate reply.');
+        }).finally(() => {
+            setIsGeneratingReply(false);
+        });
+    };
+
+    const handleSendDirectly = () => {
+        if (!selectedEmail || !aiReplyDraft) return;
+        setIsSending(true);
+        setSendSuccess(false);
+        const to = extractEmailAddress(selectedEmail.sender);
+        axios.post('/api/agent/execute', {
+            action: 'send_email',
+            data: { to, subject: `Re: ${selectedEmail.subject.replace(/^Re:\s*/i, '')}`, body: aiReplyDraft }
+        }).then(() => {
+            setSendSuccess(true);
+            setTimeout(() => setSendSuccess(false), 3000);
+        }).catch(err => {
+            console.error('Failed to send email:', err);
+            alert('Failed to send email.');
+        }).finally(() => setIsSending(false));
+    };
+
+    const extractEmailAddress = (senderStr) => {
+        if (!senderStr) return '';
+        const match = senderStr.match(/<(.+)>/);
+        return match ? match[1] : senderStr;
+    };
+
+    // ─── Download Report ────────────────────────────────────────
+    const handleDownloadReport = () => {
+        const doc = new jsPDF();
+        doc.setFontSize(18);
+        doc.text('Email Analysis Report', 14, 22);
+        
+        const tableColumn = ["Subject", "Summary", "Date"];
+        const tableRows = emails.slice(0, 50).map(email => [
+            email.subject || '(No Subject)',
+            email.snippet || 'No summary',
+            new Date(email.processedAt).toLocaleDateString()
+        ]);
+
+        doc.autoTable({
+            startY: 35,
+            head: [tableColumn],
+            body: tableRows,
+            theme: 'grid',
+            headStyles: { fillColor: [124, 58, 237] },
+            styles: { fontSize: 9 }
+        });
+        doc.save('Email_Analysis_Report.pdf');
+    };
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        return `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+    };
+
+    const getSenderName = (sender) => {
+        if (!sender) return 'Unknown Sender';
+        const match = sender.match(/^([^<]+)/);
+        return match ? match[1].trim() : sender;
+    };
+
+    // Filter emails
+    const filteredEmails = emails.filter(e => {
+        if (searchTerm) {
+            const subjMatch = e.subject ? e.subject.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+            const senderMatch = e.sender ? e.sender.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+            if (!subjMatch && !senderMatch) return false;
         }
-    };
+        if (activeTab === 'Unread' && e.aiStatus !== 'PENDING') return false; // Mocking unread as pending
+        if (activeTab === 'Important' && (!e.subject || !e.subject.toLowerCase().includes('important'))) return false;
+        return true;
+    });
 
-    const getSubject = (e) => e?.subject || 'No Subject';
-    const getSender = (e) => e?.sender || 'Unknown Sender';
-    const getSenderInitials = (e) => {
-        const name = getSender(e).split('<')[0].trim();
-        return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() || 'EM';
-    };
-    const getDate = (e) => {
-        if (!e?.processedAt) return 'Recently';
-        return new Date(e.processedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
-    };
-    const getTime = (e) => {
-        if (!e?.processedAt) return '';
-        return new Date(e.processedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    };
-    const getBodyText = (e) => {
-        if (!e?.body) return e?.snippet || 'No Content';
-        const stripped = e.body.replace(/<[^>]*>?/gm, '');
-        return stripped.trim() || e.snippet || 'No Content';
-    };
+    const pendingCount = emails.filter(e => e.aiStatus === 'PENDING').length;
 
-    const displayEmails = emails;
-    const filtered = displayEmails.filter(e =>
-        getSubject(e).toLowerCase().includes(searchQuery.toLowerCase()) ||
-        getSender(e).toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    const activeEmail = filtered[selectedIndex] || filtered[0] || null;
-
-    const categoryColor = (cat) => {
-        const map = { 'Promotional': { bg: 'rgba(245,158,11,0.12)', color: '#f59e0b' }, 'Informational': { bg: 'rgba(59,130,246,0.12)', color: '#3b82f6' }, 'ANALYZED': { bg: 'rgba(16,185,129,0.12)', color: '#10b981' } };
-        return map[cat] || { bg: 'rgba(139,92,246,0.12)', color: '#8b5cf6' };
+    // Helper for random colored initial icons for senders
+    const getInitialsColor = (name) => {
+        const colors = ['#8B5CF6', '#10B981', '#F59E0B', '#3B82F6', '#EC4899'];
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        return colors[Math.abs(hash) % colors.length];
     };
-
-    const avatarColors = ['#8b5cf6', '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#06b6d4'];
-    const getAvatarColor = (index) => avatarColors[index % avatarColors.length];
-
-    const tabs = [
-        { id: 'summary', label: 'AI Summary' },
-        { id: 'details', label: 'Key Details' },
-        { id: 'actions', label: 'Suggested Actions' },
-        { id: 'reply', label: 'Smart Reply' },
-        { id: 'classification', label: 'Classification' },
-    ];
 
     return (
-        <div className="ea-page">
-            {/* Header */}
-            <div className="ea-header">
-                <div className="ea-header-left">
-                    <div className="ea-title-row">
-                        <Sparkles className="ea-title-icon" size={22} />
+        <div className="email-analysis-page">
+            
+            {/* TOP BAR */}
+            <header className="ea-header">
+                <div className="ea-title-block">
+                    <div className="ea-title-icon-wrapper">
+                        <Zap size={22} className="ea-title-icon" />
+                    </div>
+                    <div>
                         <h1 className="ea-title">Email Analysis</h1>
+                        <p className="ea-subtitle">AI-powered insights from your inbox</p>
                     </div>
-                    <p className="ea-subtitle">Analyze incoming emails using AI and get smart insights, summaries, and action suggestions.</p>
                 </div>
-                <div className="ea-header-right">
-                    <button className="ea-btn-analyze" onClick={handleAnalyze} disabled={analyzeStatus === 'loading'}>
-                        {analyzeStatus === 'loading'
-                            ? <><Clock size={15} style={{ animation: 'spin 1s linear infinite' }} /> Analyzing...</>
-                            : <><CheckCircle2 size={15} /> Analyze New Email</>}
-                    </button>
-                    <div className="ea-bell-wrapper"><Bell size={20} /><div className="ea-bell-badge">3</div></div>
+
+                <div className="ea-topbar-right">
+                    <div className="ea-search-bar">
+                        <Search size={16} className="ea-search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Search emails, senders, keywords..."
+                            className="ea-search-input"
+                        />
+                        <span className="ea-search-kbd">⌘ K</span>
+                    </div>
+
+                    <div className="ea-user-chip">
+                        <div className="ea-user-avatar">{initials}</div>
+                        <div className="ea-user-info">
+                            <span className="ea-user-name">{userName}</span>
+                            <span className="ea-user-status">Gmail Connected</span>
+                        </div>
+                        <ChevronDown size={14} className="ea-user-chevron" />
+                    </div>
                 </div>
-            </div>
+            </header>
 
-            {/* Stats */}
-            <div className="ea-stats-row">
-                {[
-                    { icon: <Mail size={18} />, label: 'Emails Analyzed', value: displayEmails.length, trend: '+18.2%', up: true, color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
-                    { icon: <Briefcase size={18} />, label: 'Action Required', value: displayEmails.filter(e => e.category === 'Action Required' || e.aiStatus === 'ACTION_REQUIRED').length, trend: '+12.4%', up: true, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
-                    { icon: <Info size={18} />, label: 'Informational', value: displayEmails.filter(e => e.category === 'Informational').length, trend: '+8.6%', up: true, color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
-                    { icon: <Users size={18} />, label: 'Promotional', value: displayEmails.filter(e => e.category === 'Promotional').length, trend: '-5.1%', up: false, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-                    { icon: <Clock size={18} />, label: 'Avg. Response Time', value: '2h 45m', trend: '+14.2%', up: false, color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
-                ].map((s, i) => (
-                    <div className="ea-stat-card" key={i}>
-                        <div className="ea-stat-icon" style={{ background: s.bg, color: s.color }}>{s.icon}</div>
-                        <div className="ea-stat-body">
-                            <div className="ea-stat-label">{s.label}</div>
-                            <div className="ea-stat-val">{s.value}</div>
-                            <div className={`ea-stat-trend ${s.up ? 'up' : 'down'}`}>
-                                {s.up ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />} {s.trend} <span>This month</span>
-                            </div>
+            {/* MAIN SPLIT CONTENT */}
+            <div className="ea-main-content">
+                
+                {/* LEFT LIST COLUMN */}
+                <div className={`ea-list-col ${selectedEmail ? 'hide-on-mobile' : ''}`}>
+                    {/* Controls */}
+                    <div className="eal-controls">
+                        <div className="eal-search-box">
+                            <Search size={14} className="eal-icon" />
+                            <input 
+                                type="text" 
+                                placeholder="Search emails..." 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
                         </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Main split layout */}
-            <div className="ea-main">
-                {/* Left Panel — Email List */}
-                <div className={`ea-list-panel ${view === 'detail' ? 'ea-hidden-mobile' : ''}`}>
-                    <div className="ea-list-header">
-                        <h2 className="ea-list-title">Analyzed Emails</h2>
-                        <div className="ea-list-controls">
-                            <div className="ea-search-box">
-                                <Search size={14} />
-                                <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search emails..." />
-                            </div>
-                            <button className="ea-filter-btn"><Filter size={14} /> Filter</button>
-                        </div>
-                    </div>
-
-                    <div className="ea-email-list">
-                        {loading ? (
-                            <div className="ea-empty">
-                                <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⏳</div>
-                                Loading emails...
-                            </div>
-                        ) : filtered.length === 0 ? (
-                            <div className="ea-empty">
-                                <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📧</div>
-                                <div style={{ fontWeight: 700, marginBottom: '0.4rem', color: '#1e293b' }}>No emails analyzed yet</div>
-                                <div style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: '0.75rem' }}>
-                                    Click "Analyze New Email" to fetch and analyze your Gmail inbox.
-                                </div>
-                                <button className="ea-btn-analyze" onClick={handleAnalyze} style={{ margin: '0 auto' }}>
-                                    <CheckCircle2 size={14} /> Analyze Now
-                                </button>
-                            </div>
-                        ) : filtered.map((email, i) => (
-                            <div
-                                key={email.id || i}
-                                className={`ea-email-item ${selectedIndex === i ? 'selected' : ''}`}
-                                onClick={() => { setSelectedIndex(i); setView('detail'); setActiveTab('summary'); }}
+                        
+                        <div className="eal-action-row" style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                            <button 
+                                className="eal-btn primary" 
+                                onClick={triggerAiAnalysis} 
+                                disabled={isAnalyzing}
+                                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', padding: '0.5rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', border: 'none', background: '#7C3AED', color: '#FFF' }}
                             >
-                                <div className="ea-avatar" style={{ background: getAvatarColor(i) }}>
-                                    {getSenderInitials(email)}
-                                </div>
-                                <div className="ea-item-body">
-                                    <div className="ea-item-top">
-                                        <span className="ea-item-sender">{getSender(email).split('<')[0].trim()}</span>
-                                        <span className="ea-item-time">{getTime(email)}</span>
-                                    </div>
-                                    <div className="ea-item-subject">{getSubject(email)}</div>
-                                    <div className="ea-item-bottom">
-                                        <span className="ea-item-snippet">{getBodyText(email).substring(0, 55)}...</span>
-                                        <span className="ea-item-badge" style={categoryColor(email.category || email.aiStatus)}>
-                                            {email.category || 'Analyzed'}
+                                <Cpu size={14} className={isAnalyzing ? 'spin' : ''} />
+                                {isAnalyzing ? 'Analyzing...' : 'Run AI Analysis'}
+                            </button>
+                            <button 
+                                className="eal-btn secondary" 
+                                onClick={syncInbox} 
+                                disabled={isSyncing}
+                                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', padding: '0.5rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', border: '1px solid #E5E7EB', background: '#F9FAFB', color: '#4B5563' }}
+                            >
+                                <RefreshCw size={14} className={isSyncing ? 'spin' : ''} />
+                                {isSyncing ? 'Syncing...' : 'Sync Inbox'}
+                            </button>
+                        </div>
+                        
+                        <div className="eal-tabs" style={{ marginTop: '0.75rem' }}>
+                            {['All', 'Unread', 'Important', 'AI Alerts'].map(tab => (
+                                <button 
+                                    key={tab} 
+                                    className={`eal-tab ${activeTab === tab ? 'active' : ''}`}
+                                    onClick={() => setActiveTab(tab)}
+                                >
+                                    {tab} {tab === 'All' && <span className="tab-count">({emails.length})</span>}
+                                    {tab === 'Unread' && <span className="tab-count">({pendingCount})</span>}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Email List */}
+                    <div className="eal-list">
+                        {loading && <div className="eal-empty">Loading emails...</div>}
+                        {!loading && filteredEmails.length === 0 && <div className="eal-empty">No emails found.</div>}
+                        
+                        {filteredEmails.map(email => {
+                            const senderName = getSenderName(email.sender);
+                            const senderInitials = senderName.substring(0, 2).toUpperCase();
+                            const isUnread = email.aiStatus === 'PENDING';
+                            const isSelected = selectedEmail?.id === email.id;
+
+                            return (
+                                <div 
+                                    key={email.id} 
+                                    className={`eal-item ${isSelected ? 'selected' : ''} ${isUnread ? 'unread' : ''}`}
+                                    onClick={() => handleEmailClick(email)}
+                                >
+                                    <div className="eal-item-header">
+                                        <div className="eal-sender-info">
+                                            <div className="eal-avatar" style={{ backgroundColor: getInitialsColor(senderName) }}>
+                                                {senderInitials}
+                                            </div>
+                                            <span className="eal-sender-name">{senderName}</span>
+                                            {isUnread && <span className="eal-badge badge-purple">Pending AI</span>}
+                                        </div>
+                                        <span className="eal-time">
+                                            {new Date(email.processedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                                         </span>
                                     </div>
+                                    <div className="eal-subject">{email.subject || '(No Subject)'}</div>
+                                    <div className="eal-snippet">{email.snippet || 'No preview available.'}</div>
+                                    {isUnread && <div className="eal-unread-dot"></div>}
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
-
-                    <div className="ea-list-footer">
-                        Showing 1 to {Math.min(filtered.length, 5)} of {filtered.length} emails
+                    
+                    {/* Pagination */}
+                    <div className="eal-pagination">
+                        <button><ChevronLeft size={14}/></button>
+                        <button className="active">1</button>
+                        <button>2</button>
+                        <button>3</button>
+                        <span>...</span>
+                        <button><ChevronRight size={14}/></button>
                     </div>
                 </div>
 
-                {/* Right Panel — Detail */}
-                <div className={`ea-detail-panel ${view === 'list' ? 'ea-hidden-mobile' : ''}`}>
-                    {/* Mobile back button */}
-                    <button className="ea-back-btn" onClick={() => setView('list')}>
-                        <ArrowLeft size={16} /> Back to Emails
-                    </button>
-
-                    {/* Detail Header */}
-                    <div className="ea-detail-head">
-                        <div className="ea-detail-title-row">
-                            <div className="ea-detail-title">
-                                {getSubject(activeEmail)}
-                                <span className="ea-analyzed-badge">Analyzed</span>
-                            </div>
-                            <div className="ea-detail-icons">
-                                <ZoomIn size={16} /><ZoomOut size={16} /><Maximize2 size={16} /><Trash2 size={16} />
-                            </div>
-                        </div>
-                        <div className="ea-detail-meta">
-                            <div className="ea-meta-info">
-                                <span><strong>From:</strong> {getSender(activeEmail)}</span>
-                                <span><strong>To:</strong> you@example.com</span>
-                            </div>
-                            <span className="ea-meta-date">{getDate(activeEmail)}</span>
-                        </div>
-                    </div>
-
-                    {/* Tabs */}
-                    <div className="ea-tabs-row">
-                        {tabs.map(t => (
-                            <button key={t.id} className={`ea-tab ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id)}>
-                                {t.id === 'summary' && <Sparkles size={13} />}
-                                {t.label}
+                {/* RIGHT DETAIL COLUMN */}
+                {selectedEmail ? (
+                    <div className="ea-detail-col">
+                        
+                        {/* Detail Top Bar */}
+                        <div className="ead-top-bar">
+                            <button className="ead-back-btn" onClick={() => setSelectedEmail(null)}>
+                                <ChevronLeft size={16} /> Back to emails
                             </button>
-                        ))}
-                    </div>
-
-                    {/* Tab Content */}
-                    <div className="ea-tab-content">
-                        {activeTab === 'summary' && (
-                            <div className="ea-section">
-                                <div className="ea-section-title"><div className="ea-dot purple" /><Sparkles size={15} /> AI Summary</div>
-                                <p className="ea-section-body">
-                                    {getSender(activeEmail).split('<')[0].trim()} sent an email regarding "{getSubject(activeEmail)}".
-                                    {' '}{getBodyText(activeEmail).substring(0, 200)}
-                                </p>
-                                <button className="ea-view-original" onClick={() => setActiveTab('details')}>
-                                    View Original Email <ExternalLink size={13} />
-                                </button>
+                            <div className="ead-actions">
+                                <button><CheckCircle size={14} /> Mark as Unread</button>
+                                <button><Star size={14} /> Star</button>
+                                <button><Archive size={14} /> Archive</button>
+                                <button><MoreHorizontal size={14} /> More</button>
                             </div>
-                        )}
+                        </div>
 
-                        {activeTab === 'details' && (
-                            <div className="ea-section">
-                                <div className="ea-section-title"><div className="ea-dot blue" /><Info size={15} /> Key Details</div>
-                                <div className="ea-details-grid">
-                                    <div className="ea-detail-row"><span className="ea-detail-key">Sender:</span><span className="ea-detail-val">{getSender(activeEmail)}</span></div>
-                                    <div className="ea-detail-row"><span className="ea-detail-key">Subject:</span><span className="ea-detail-val">{getSubject(activeEmail)}</span></div>
-                                    <div className="ea-detail-row"><span className="ea-detail-key">Type:</span><span className="ea-detail-val">{activeEmail?.category || 'General'}</span></div>
-                                    <div className="ea-detail-row"><span className="ea-detail-key">Received:</span><span className="ea-detail-val">{getDate(activeEmail)}</span></div>
-                                    <div className="ea-detail-row"><span className="ea-detail-key">Importance:</span><span className="ea-detail-val">Medium</span></div>
-                                </div>
-                                <div className="ea-body-preview">
-                                    <div className="ea-body-label">Email Body</div>
-                                    <div className="ea-body-text">{getBodyText(activeEmail)}</div>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'actions' && (
-                            <div className="ea-section">
-                                <div className="ea-section-header">
-                                    <div className="ea-section-title"><div className="ea-dot green" /><CheckCircle2 size={15} /> Suggested Actions</div>
-                                    <span className="ea-badge-action">Action Required</span>
-                                </div>
-                                <ul className="ea-action-list">
-                                    <li>Review the email content carefully</li>
-                                    <li>Check pricing and offers mentioned</li>
-                                    <li>Compare with current solutions</li>
-                                    <li>Reply if interested</li>
-                                </ul>
-                                <button
-                                    className="ea-create-task-btn"
-                                    onClick={handleCreateTask}
-                                    disabled={taskStatus === 'loading'}
-                                >
-                                    {taskStatus === 'loading' ? <><Clock size={14} /> Creating...</>
-                                        : taskStatus === 'done' ? <><CheckCircle2 size={14} /> Task Created!</>
-                                        : <><Briefcase size={14} /> Create Task</>}
-                                </button>
-                            </div>
-                        )}
-
-                        {activeTab === 'reply' && (
-                            <div className="ea-section">
-                                <div className="ea-section-title"><div className="ea-dot purple" /><Sparkles size={15} /> Smart Reply (AI Generated)</div>
-                                <div className="ea-reply-box">
-                                    Hi {getSender(activeEmail).split('<')[0].split(' ')[0]},
-                                    {'\n\n'}Thank you for sharing the details about the {getSubject(activeEmail).toLowerCase()}.
-                                    Could you please provide more information on pricing plans and integration with our existing systems?
-                                    {'\n\n'}Best regards,{'\n'}Kavinraja
-                                </div>
-                                <div className="ea-reply-actions">
-                                    <button className="ea-use-reply-btn" onClick={() => showToast('✅ Reply copied!', 'success')}><Send size={14} /> Use Reply</button>
-                                    <button className="ea-edit-reply-btn"><Edit3 size={14} /> Edit Reply</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'classification' && (
-                            <div className="ea-section">
-                                <div className="ea-section-title"><div className="ea-dot orange" /><Info size={15} /> Classification</div>
-                                <div className="ea-class-row">
-                                    <span className="ea-class-tag" style={categoryColor(activeEmail?.category)}>
-                                        {activeEmail?.category || 'General'}
-                                    </span>
-                                </div>
-                                <div className="ea-conf-block">
-                                    <div className="ea-conf-label">Confidence Score</div>
-                                    <div className="ea-conf-bar-wrap">
-                                        <div className="ea-conf-bar"><div className="ea-conf-fill" style={{ width: '86%' }} /></div>
-                                        <span className="ea-conf-pct">86%</span>
+                        {/* Detail Scrollable Content */}
+                        <div className="ead-scroll-area">
+                            
+                            {/* Email Header Card */}
+                            <div className="ead-header-card">
+                                <div className="ead-header-top">
+                                    <div className="ead-sender-avatar">
+                                        <Mail size={20} color="#7C3AED" />
+                                    </div>
+                                    <div className="ead-title-info">
+                                        <h2 className="ead-subject">{selectedEmail.subject}</h2>
+                                        <div className="ead-sender-line">
+                                            <strong>{getSenderName(selectedEmail.sender)}</strong> 
+                                            <span className="ead-email-address">&lt;{extractEmailAddress(selectedEmail.sender)}&gt;</span>
+                                            <span className="ead-to-me">to me <ChevronDown size={12}/></span>
+                                        </div>
+                                    </div>
+                                    <div className="ead-date-info">
+                                        <div className="ead-time">{new Date(selectedEmail.processedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>
+                                        <div className="ead-date">{new Date(selectedEmail.processedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                                        <span className="ead-badge">Important</span>
                                     </div>
                                 </div>
-                                <div className="ea-class-meta">
-                                    <div className="ea-detail-row"><span className="ea-detail-key">Type:</span><span className="ea-badge-action">Action Required</span></div>
-                                    <div className="ea-detail-row"><span className="ea-detail-key">Priority:</span><span className="ea-badge-medium">Medium</span></div>
+
+                                <div className="ead-meta-row">
+                                    <div className="ead-meta-item"><Calendar size={13}/> {formatDate(selectedEmail.processedAt)}</div>
+                                    <div className="ead-meta-item"><Inbox size={13}/> Received in Inbox</div>
+                                    <div className="ead-meta-item"><Tag size={13}/> Related to Events</div>
+                                    <div className="ead-meta-confidence">
+                                        <Zap size={13}/> AI Confidence: 99%
+                                        <div className="ead-progress-bar"><div className="ead-progress-fill"></div></div>
+                                    </div>
                                 </div>
                             </div>
-                        )}
-                    </div>
-                </div>
-            </div>
 
-            {/* Toast */}
-            {toast && (
-                <div className={`ea-toast ${toast.type}`}>{toast.msg}</div>
-            )}
+                            {/* Two Column Split: AI Insights vs Original Body */}
+                            <div className="ead-content-split">
+                                
+                                {/* Inner Left: AI Summary */}
+                                <div className="ead-ai-col">
+                                    <div className="ead-card">
+                                        <h3 className="ead-card-title"><Zap size={16} color="#7C3AED" /> AI Summary</h3>
+                                        <p className="ead-summary-text">
+                                            {selectedEmail.snippet || "The AI has analyzed this email to extract key information. Review the summary below."}
+                                        </p>
+                                        <div className="ead-key-values">
+                                            <div className="ead-kv">
+                                                <span className="ead-k"><Calendar size={12}/> Date</span>
+                                                <span className="ead-v">{new Date(selectedEmail.processedAt).toLocaleDateString()}</span>
+                                            </div>
+                                            <div className="ead-kv">
+                                                <span className="ead-k"><Mail size={12}/> Source</span>
+                                                <span className="ead-v">{extractEmailAddress(selectedEmail.sender)}</span>
+                                            </div>
+                                            <div className="ead-kv">
+                                                <span className="ead-k"><CheckCircle size={12}/> AI Status</span>
+                                                <span className="ead-v">{selectedEmail.aiStatus}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* AI Suggested Actions */}
+                                    <div className="ead-card">
+                                        <h3 className="ead-card-title"><Zap size={16} color="#7C3AED" /> AI Suggested Actions</h3>
+                                        <div className="ead-actions-grid">
+                                            <button className="ead-action-btn">
+                                                <div className="ead-ab-icon purple"><CheckCircle size={16}/></div>
+                                                <div className="ead-ab-text">
+                                                    <strong>Create Task</strong>
+                                                    <span>Create a task from this email</span>
+                                                </div>
+                                                <Plus size={16} className="ead-ab-plus" />
+                                            </button>
+                                            <button className="ead-action-btn">
+                                                <div className="ead-ab-icon blue"><Bell size={16}/></div>
+                                                <div className="ead-ab-text">
+                                                    <strong>Add Reminder</strong>
+                                                    <span>Set reminder to follow up</span>
+                                                </div>
+                                                <Plus size={16} className="ead-ab-plus" />
+                                            </button>
+                                            <button className="ead-action-btn" onClick={handleGenerateReply}>
+                                                <div className="ead-ab-icon orange"><MessageSquare size={16}/></div>
+                                                <div className="ead-ab-text">
+                                                    <strong>Draft AI Reply</strong>
+                                                    <span>Generate a smart response</span>
+                                                </div>
+                                                <Plus size={16} className="ead-ab-plus" />
+                                            </button>
+                                        </div>
+
+                                        {/* AI Reply Inline Editor */}
+                                        {aiReplyDraft && (
+                                            <div className="ead-reply-editor">
+                                                <textarea 
+                                                    value={aiReplyDraft} 
+                                                    onChange={(e) => setAiReplyDraft(e.target.value)}
+                                                    rows={4}
+                                                />
+                                                <div className="ead-reply-actions">
+                                                    <button className="btn-cancel" onClick={() => setAiReplyDraft('')}>Discard</button>
+                                                    <button className="btn-send" onClick={handleSendDirectly} disabled={isSending}>
+                                                        {isSending ? 'Sending...' : sendSuccess ? 'Sent!' : 'Send Reply'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Inner Right: Original Email */}
+                                <div className="ead-original-col">
+                                    <div className="ead-card ead-original-card">
+                                        <div className="ead-card-header">
+                                            <h3 className="ead-card-title"><FileText size={16} color="#7C3AED"/> Original Email</h3>
+                                            {selectedEmail.messageId && (
+                                                <a 
+                                                    href={`https://mail.google.com/mail/u/0/#inbox/${selectedEmail.messageId}`}
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="ead-link-btn" 
+                                                    style={{ textDecoration: 'none' }}
+                                                >
+                                                    Open in Gmail
+                                                </a>
+                                            )}
+                                        </div>
+                                        <div className="ead-original-body">
+                                            {detailLoading ? (
+                                                <div style={{ color: '#9CA3AF' }}>Loading full body...</div>
+                                            ) : selectedEmail.body ? (
+                                                <div dangerouslySetInnerHTML={{ __html: selectedEmail.body }} />
+                                            ) : (
+                                                <div style={{ color: '#9CA3AF' }}>No detailed body available.</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="ea-detail-empty hide-on-mobile">
+                        <div className="eae-icon">
+                            <Mail size={48} />
+                        </div>
+                        <h2>Select an email</h2>
+                        <p>Click on an email from the list to view its AI-powered analysis and suggested actions.</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

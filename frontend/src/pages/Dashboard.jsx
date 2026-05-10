@@ -1,362 +1,447 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    Plus, Bell, Settings, Sparkles, TrendingUp, CheckCircle2,
-    Clock, Calendar, MoreHorizontal, ChevronRight, Play,
-    Mail, Database, Gift, AlarmClock, BarChart3, X
+    CheckCircle, Clock, AlertTriangle, Layers, Sun, Sunset, Moon, Coffee, Sparkles,
+    Zap, Bell, Mail, ChevronRight, Target, TrendingUp, TrendingDown, Calendar,
+    BarChart2, Star, Search, Plus, ArrowRight
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Dashboard.css';
 
-/* ═══════════ Mini Sparkline (pure CSS wave) ═══════════ */
-const Sparkline = ({ color }) => (
-    <svg className="db-sparkline" viewBox="0 0 120 36" fill="none">
-        <polyline
-            points="0,28 15,18 30,24 45,10 60,16 75,8 90,14 105,6 120,12"
-            stroke={color}
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-            opacity="0.85"
-        />
-    </svg>
-);
-
-/* ═══════════ Stat Card ═══════════ */
-const StatCard = ({ title, value, trend, trendUp, icon, iconBg, sparkColor, delay }) => (
+/* ─── Stat Card ──────────────────────────────────── */
+const StatCard = ({ title, value, icon, colorClass, trend, trendVal, trendUp, delay = '0s', unit }) => (
     <motion.div
-        className="db-stat-card"
+        className={`stat-card ${colorClass}`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay }}
-        whileHover={{ y: -3, boxShadow: '0 8px 30px rgba(0,0,0,0.09)' }}
+        transition={{ duration: 0.4, delay: parseFloat(delay) }}
+        whileHover={{ y: -4, scale: 1.02 }}
     >
-        <div className="db-stat-top">
-            <div className="db-stat-icon" style={{ background: iconBg }}>{icon}</div>
-            <span className="db-stat-title">{title}</span>
+        <div className="stat-card-top">
+            <span className="stat-card-title">{title}</span>
+            <div className="stat-card-icon">{icon}</div>
         </div>
-        <div className="db-stat-value">{value}</div>
-        <div className="db-stat-meta">
-            <span className={`db-trend ${trendUp ? 'up' : 'down'}`}>
-                <TrendingUp size={11} /> {trend}
-            </span>
-            <span className="db-vs">vs last 30 days</span>
+        <div className="stat-card-value">
+            {value}
+            {unit && <span className="stat-unit">{unit}</span>}
         </div>
-        <Sparkline color={sparkColor} />
+        <div className="stat-card-footer">
+            {trendVal && (
+                <span className={`stat-trend-pill ${trendUp ? 'trend-up' : 'trend-down'}`}>
+                    {trendUp ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                    {trendVal}
+                </span>
+            )}
+            {trend && <span className="stat-trend-label">{trend}</span>}
+        </div>
     </motion.div>
 );
 
-/* ═══════════ Template Row ═══════════ */
-const TemplateRow = ({ icon, iconBg, name, schedule, uses }) => (
-    <div className="db-tpl-row">
-        <div className="db-tpl-icon" style={{ background: iconBg }}>{icon}</div>
-        <div className="db-tpl-info">
-            <span className="db-tpl-name">{name}</span>
-            <span className="db-tpl-sched">{schedule}</span>
+/* ─── AI Recommendation Item ─────────────────────── */
+const RecommendationItem = ({ icon, iconClass, title, subtitle, onClick }) => (
+    <motion.div
+        className={`rec-item ${iconClass}`}
+        whileHover={{ x: 4 }}
+        onClick={onClick}
+        style={{ cursor: onClick ? 'pointer' : 'default' }}
+    >
+        <div className={`rec-icon ${iconClass}`}>{icon}</div>
+        <div className="rec-content">
+            <div className="rec-title">{title}</div>
+            <div className="rec-subtitle">{subtitle}</div>
         </div>
-        <span className="db-tpl-uses">{uses}</span>
-        <button className="db-tpl-use-btn">Use</button>
-    </div>
+        <ChevronRight size={16} className="rec-arrow" />
+    </motion.div>
 );
 
-/* ═══════════ Task Row ═══════════ */
-const TaskRow = ({ icon, iconBg, name, schedule, status, lastRun }) => (
-    <div className="db-task-row">
-        <div className="db-task-info">
-            <div className="db-task-icon" style={{ background: iconBg }}>{icon}</div>
-            <span className="db-task-name">{name}</span>
+/* ─── Schedule Item ──────────────────────────────── */
+const ScheduleItem = ({ time, title, duration, type, dotColor }) => (
+    <div className="schedule-row">
+        <div className="schedule-time-col">{time}</div>
+        <div className="schedule-dot-col">
+            <div className="schedule-dot" style={{ background: dotColor }} />
         </div>
-        <span className="db-task-sched">{schedule}</span>
-        <span className={`db-task-status status-${status.toLowerCase()}`}>{status}</span>
-        <span className="db-task-lastrun">{lastRun}</span>
-        <button className="db-task-more"><MoreHorizontal size={15} /></button>
-    </div>
-);
-
-/* ═══════════ Activity Item ═══════════ */
-const ActivityItem = ({ icon, iconBg, text, time }) => (
-    <div className="db-activity-item">
-        <div className="db-activity-dot" style={{ background: iconBg }}>{icon}</div>
-        <div className="db-activity-info">
-            <p className="db-activity-text" dangerouslySetInnerHTML={{ __html: text }} />
-            <span className="db-activity-time">{time}</span>
+        <div className="schedule-info-col">
+            <div className="schedule-title">{title}</div>
+            <div className="schedule-meta">{duration} · {type}</div>
         </div>
     </div>
 );
 
-/* ═══════════ Dashboard Page ═══════════ */
+/* ─── Dashboard Page ─────────────────────────────── */
 const Dashboard = () => {
     const navigate = useNavigate();
     const [stats, setStats] = useState({ totalTasks: 0, completedTasks: 0, pendingTasks: 0, highPriorityTasks: 0 });
-    const [prompt, setPrompt] = useState('');
-    const [realTasks, setRealTasks] = useState([]);
-    const [notifications, setNotifications] = useState([]);
-    const [showNotifs, setShowNotifs] = useState(false);
-    const [generating, setGenerating] = useState(false);
-    const [genMsg, setGenMsg] = useState('');
+    const [greeting, setGreeting] = useState('Good Morning');
+    const [greetingEmoji, setGreetingEmoji] = useState('👋');
+    const [userName, setUserName] = useState('Kavin');
+    const [userEmail, setUserEmail] = useState('');
+    const [recentTasks, setRecentTasks] = useState([]);
 
-    const fetchData = () => {
-        axios.get('/api/dashboard').then(res => setStats(res.data)).catch(() => {});
-        axios.get('/api/tasks').then(res => setRealTasks(Array.isArray(res.data) ? res.data.slice(0,5) : [])).catch(() => {});
-        axios.get('/api/notifications/unread').then(res => setNotifications(Array.isArray(res.data) ? res.data : [])).catch(() => {});
-    };
+    useEffect(() => {
+        const hour = new Date().getHours();
+        if (hour < 12) { setGreeting('Good morning'); setGreetingEmoji('👋'); }
+        else if (hour < 17) { setGreeting('Good afternoon'); setGreetingEmoji('☀️'); }
+        else if (hour < 20) { setGreeting('Good evening'); setGreetingEmoji('🌅'); }
+        else { setGreeting('Good night'); setGreetingEmoji('🌙'); }
 
-    useEffect(() => { fetchData(); }, []);
-
-    const handleGenerate = async () => {
-        if (!prompt.trim() || generating) return;
-        setGenerating(true);
-        setGenMsg('');
-        try {
-            await axios.post('/api/tasks', {
-                title: prompt.trim(),
-                description: `AI generated task: ${prompt.trim()}`,
-                priority: 'Medium',
-                status: 'Pending',
-                deadline: new Date(Date.now() + 86400000).toISOString().slice(0, 19)
-            });
-            setGenMsg('✅ Task created: "' + prompt.trim() + '"');
-            setPrompt('');
-            setTimeout(() => { fetchData(); setGenMsg(''); }, 3000);
-        } catch {
-            setGenMsg('❌ Failed to create task. Please try again.');
-            setTimeout(() => setGenMsg(''), 3000);
-        } finally {
-            setGenerating(false);
+        const email = localStorage.getItem('user_email') || '';
+        setUserEmail(email);
+        if (email) {
+            const namePart = email.split('@')[0];
+            setUserName(namePart.charAt(0).toUpperCase() + namePart.slice(1));
         }
-    };
 
-    const handleMarkAllRead = async () => {
-        try { await axios.put('/api/notifications/read-all'); setNotifications([]); } catch {}
-    };
+        axios.get('/api/dashboard')
+            .then(res => setStats(res.data))
+            .catch(() => {});
 
-    const handleMarkRead = async (id) => {
-        try { await axios.put(`/api/notifications/${id}/read`); setNotifications(prev => prev.filter(n => n.id !== id)); } catch {}
-    };
+        axios.get('/api/tasks')
+            .then(res => setRecentTasks(res.data.slice(0, 3)))
+            .catch(() => {});
+    }, []);
 
-    const userEmail = localStorage.getItem('user_email') || 'user@example.com';
-    const userName = userEmail.split('@')[0];
-    const initials = userName.charAt(0).toUpperCase();
-
-    const templates = [
-        { icon: <AlarmClock size={14} />, iconBg: 'rgba(124,58,237,0.12)', name: 'Daily Standup Reminder', schedule: 'Runs daily at 09:00 AM', uses: '12.4K uses' },
-        { icon: <Mail size={14} />, iconBg: 'rgba(59,130,246,0.12)', name: 'Weekly Report Email', schedule: 'Runs every Monday at 10:00 AM', uses: '8.7K uses' },
-        { icon: <Database size={14} />, iconBg: 'rgba(16,185,129,0.12)', name: 'Database Backup', schedule: 'Runs daily at 02:00 AM', uses: '6.1K uses' },
-        { icon: <Gift size={14} />, iconBg: 'rgba(245,158,11,0.12)', name: 'Birthday Wishes', schedule: 'Runs on event day at 09:00 AM', uses: '4.3K uses' },
-    ];
-
-    const tasks = [
-        { icon: <AlarmClock size={14} />, iconBg: 'rgba(124,58,237,0.12)', name: 'Daily Standup Reminder', schedule: 'Every day, 09:00 AM', status: 'Completed', lastRun: 'Today, 09:00 AM' },
-        { icon: <Mail size={14} />, iconBg: 'rgba(59,130,246,0.12)', name: 'Weekly Report Email', schedule: 'Every Mon, 10:00 AM', status: 'Completed', lastRun: 'Mon, 10:00 AM' },
-        { icon: <Database size={14} />, iconBg: 'rgba(16,185,129,0.12)', name: 'Database Backup', schedule: 'Every day, 02:00 AM', status: 'Pending', lastRun: 'Today, 02:00 AM' },
-        { icon: <Calendar size={14} />, iconBg: 'rgba(99,102,241,0.12)', name: 'Monthly Analytics Report', schedule: '1st of every month, 11:00 AM', status: 'Scheduled', lastRun: '–' },
-        { icon: <Gift size={14} />, iconBg: 'rgba(245,158,11,0.12)', name: 'Birthday Wishes', schedule: 'On event day, 09:00 AM', status: 'Completed', lastRun: 'Today, 09:00 AM' },
-    ];
-
-    const activity = [
-        { icon: <CheckCircle2 size={12} />, iconBg: '#10B981', text: 'Task <strong>"Daily Standup Reminder"</strong> completed', time: 'Today, 09:00 AM' },
-        { icon: <Mail size={12} />, iconBg: '#3B82F6', text: 'Task <strong>"Weekly Report Email"</strong> completed', time: 'Mon, 10:00 AM' },
-        { icon: <Database size={12} />, iconBg: '#F59E0B', text: 'Task <strong>"Database Backup"</strong> is pending', time: 'Today, 02:00 AM' },
-        { icon: <Calendar size={12} />, iconBg: '#6366F1', text: 'Task <strong>"Monthly Analytics Report"</strong> scheduled', time: 'May 1, 11:00 AM' },
-    ];
-
-    const examples = ['Daily standup reminder', 'Weekly report generation', 'Backup database every night', 'Send birthday wishes'];
+    const timeSavedHours = (stats.completedTasks * 0.15).toFixed(1);
 
     return (
-        <div className="db-page">
+        <div className="dashboard-page">
 
-            {/* ── Top Bar ── */}
-            <div className="db-topbar">
-                <div className="db-topbar-left">
-                    <h1 className="db-page-title">Dashboard</h1>
-                    <p className="db-page-sub">Generate, manage and automate your tasks with ease.</p>
+            {/* ── Top Header Bar ── */}
+            <motion.div
+                className="dash-top-bar"
+                initial={{ opacity: 0, y: -16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+            >
+                <div className="dash-greeting-block">
+                    <h1 className="dash-greeting-text">
+                        {greeting}, {userName}! {greetingEmoji}
+                    </h1>
+                    <p className="dash-greeting-sub">Let's make today exceptionally productive.</p>
                 </div>
-                <div className="db-topbar-right">
-                    <button className="db-create-btn" onClick={() => navigate('/tasks')}>
-                        <Plus size={16} /> Create New
-                    </button>
-                    <div style={{ position: 'relative' }}>
-                        <button className="db-icon-btn-top" onClick={() => setShowNotifs(v => !v)}>
-                            <Bell size={17} />
-                            {notifications.length > 0 && <span className="db-notif-dot" style={{ position:'absolute',top:4,right:4,background:'#ef4444',borderRadius:'50%',width:8,height:8 }} />}
-                        </button>
-                        <AnimatePresence>
-                        {showNotifs && (
-                            <motion.div initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}}
-                                style={{ position:'absolute',right:0,top:'110%',width:300,background:'white',borderRadius:12,boxShadow:'0 8px 30px rgba(0,0,0,0.15)',zIndex:999,border:'1px solid #e2e8f0',overflow:'hidden' }}>
-                                <div style={{ padding:'0.75rem 1rem',borderBottom:'1px solid #f1f5f9',display:'flex',justifyContent:'space-between',alignItems:'center' }}>
-                                    <span style={{fontWeight:700,fontSize:'0.9rem'}}>Notifications ({notifications.length})</span>
-                                    {notifications.length > 0 && <button onClick={handleMarkAllRead} style={{fontSize:'0.75rem',color:'#8b5cf6',background:'none',border:'none',cursor:'pointer',fontWeight:600}}>Mark all read</button>}
-                                </div>
-                                <div style={{ maxHeight:260,overflowY:'auto' }}>
-                                    {notifications.length === 0 ? (
-                                        <div style={{padding:'1.5rem',textAlign:'center',color:'#64748b',fontSize:'0.85rem'}}>All caught up! 🎉</div>
-                                    ) : notifications.map(n => (
-                                        <div key={n.id} style={{padding:'0.75rem 1rem',borderBottom:'1px solid #f8fafc',display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:'0.5rem'}}>
-                                            <div>
-                                                <div style={{fontSize:'0.83rem',fontWeight:600,color:'#1e293b',marginBottom:'0.15rem'}}>{n.message}</div>
-                                                <div style={{fontSize:'0.72rem',color:'#94a3b8'}}>{n.createdAt ? new Date(n.createdAt).toLocaleString() : 'Recently'}</div>
-                                            </div>
-                                            <button onClick={() => handleMarkRead(n.id)} style={{background:'none',border:'none',color:'#94a3b8',cursor:'pointer',flexShrink:0}}><X size={14}/></button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </motion.div>
-                        )}
-                        </AnimatePresence>
+
+                <div className="dash-topbar-right">
+                    <div className="dash-search-bar">
+                        <Search size={14} className="dash-search-icon" />
+                        <input type="text" placeholder="Search tasks, emails…" className="dash-search-input" />
+                        <span className="dash-search-kbd">⌘ K</span>
                     </div>
-                    <button className="db-icon-btn-top"><Settings size={17} /></button>
-                </div>
-            </div>
-
-            {/* ── Stat Cards ── */}
-            <div className="db-stat-grid">
-                <StatCard title="Tasks Generated" value={stats.totalTasks ?? 0} trend="18.5%" trendUp icon={<BarChart3 size={18} />} iconBg="rgba(124,58,237,0.12)" sparkColor="#7c3aed" delay={0} />
-                <StatCard title="Tasks Completed" value={stats.completedTasks ?? 0} trend="16.3%" trendUp icon={<CheckCircle2 size={18} />} iconBg="rgba(59,130,246,0.12)" sparkColor="#3b82f6" delay={0.06} />
-                <StatCard title="Pending Tasks" value={stats.pendingTasks ?? 0} trend="8.7%" trendUp icon={<Clock size={18} />} iconBg="rgba(16,185,129,0.12)" sparkColor="#10b981" delay={0.12} />
-                <StatCard title="Schedules Active" value={stats.highPriorityTasks ?? 0} trend="4.2%" trendUp icon={<Calendar size={18} />} iconBg="rgba(245,158,11,0.12)" sparkColor="#f59e0b" delay={0.18} />
-            </div>
-
-            {/* ── Middle Row ── */}
-            <div className="db-mid-row">
-
-                {/* Generate Tasks Panel */}
-                <motion.div
-                    className="db-generate-panel"
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                >
-                    <div className="db-gen-header">
-                        <div className="db-gen-icon"><Sparkles size={20} /></div>
-                        <div>
-                            <h3 className="db-gen-title">Generate Tasks Automatically</h3>
-                            <p className="db-gen-sub">Describe what you want to automate and let AI create tasks for you.</p>
+                    <div className="dash-user-chip">
+                        <div className="dash-user-avatar">{userName.charAt(0).toUpperCase()}</div>
+                        <div className="dash-user-info">
+                            <span className="dash-user-name">{userEmail.split('@')[0] || userName}</span>
+                            <span className="dash-user-status">
+                                <span className="dash-status-dot" />
+                                Gmail Connected
+                            </span>
                         </div>
                     </div>
-                    <div className="db-gen-input-row">
-                        <input
-                            className="db-gen-input"
-                            type="text"
-                            placeholder="Example: Create a task every Monday to send a progress report email"
-                            value={prompt}
-                            onChange={e => setPrompt(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleGenerate()}
-                        />
-                        <button className="db-gen-btn" onClick={handleGenerate} disabled={generating || !prompt.trim()}>
-                            <Sparkles size={14} /> {generating ? 'Creating...' : 'Generate'}
-                        </button>
-                    </div>
-                    {genMsg && <p style={{ fontSize: '0.82rem', marginTop: '0.5rem', color: genMsg.startsWith('✅') ? '#10b981' : '#ef4444', fontWeight: 600 }}>{genMsg}</p>}
-                    <p className="db-examples-label">Try these examples:</p>
-                    <div className="db-examples-row">
-                        {examples.map((ex, i) => (
-                            <button key={i} className="db-example-chip" onClick={() => setPrompt(ex)}>
-                                {ex}
-                            </button>
-                        ))}
-                        <button className="db-example-chip db-more-chip"><MoreHorizontal size={14} /></button>
-                    </div>
-                </motion.div>
+                </div>
+            </motion.div>
 
-                {/* Popular Templates */}
-                <motion.div
-                    className="db-panel"
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.25 }}
-                >
-                    <div className="db-panel-header">
-                        <h3 className="db-panel-title">Popular Templates</h3>
-                        <button className="db-view-all">View all</button>
+            {/* ── Hero Banner ── */}
+            <motion.div
+                className="dash-hero-banner"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+            >
+                <div className="hero-content">
+                    <div className="hero-text-block">
+                        <h2 className="hero-title">AI that works while you focus.</h2>
+                        <p className="hero-subtitle">
+                            Smart suggestions, automated workflows,<br />
+                            and zero inbox stress.
+                        </p>
+                        <div className="hero-actions">
+                            <button className="hero-btn-primary" onClick={() => navigate('/emails')}>
+                                <Sparkles size={16} />
+                                Analyze Emails
+                            </button>
+                            <button className="hero-btn-secondary" onClick={() => navigate('/tasks')}>
+                                <Plus size={16} />
+                                Create Task
+                            </button>
+                        </div>
                     </div>
-                    <div className="db-tpl-list">
-                        {templates.map((t, i) => <TemplateRow key={i} {...t} />)}
+
+                    {/* Email envelope decorations */}
+                    <div className="hero-decorations">
+                        <div className="hero-envelope hero-envelope-1">
+                            <Mail size={20} />
+                        </div>
+                        <div className="hero-envelope hero-envelope-2">
+                            <Mail size={14} />
+                        </div>
+                        <div className="hero-paper-plane">✈</div>
                     </div>
-                </motion.div>
+
+                    {/* Animated Robot GIF */}
+                    <div className="hero-robot-wrapper">
+                        {/* Floating elements around the robot */}
+                        <div className="robot-float-item float-mail-1"><Mail size={16} /></div>
+                        <div className="robot-float-item float-sparkle-1"><Sparkles size={14} /></div>
+                        <div className="robot-float-item float-bell-1"><Bell size={16} /></div>
+                        
+                        <div className="robot-glass-container">
+                            <img
+                                src="/animatedrobotic.gif"
+                                alt="AI Robot Assistant"
+                                className="hero-robot-gif"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* ── Stat Cards Row ── */}
+            <div className="dash-stats-grid">
+                <StatCard
+                    title="Total Tasks"
+                    value={stats.totalTasks || 24}
+                    icon={<Calendar size={20} />}
+                    colorClass="stat-purple"
+                    trendVal="+12%"
+                    trendUp
+                    trend="from yesterday"
+                    delay="0s"
+                />
+                <StatCard
+                    title="Completed"
+                    value={stats.completedTasks || 16}
+                    icon={<CheckCircle size={20} />}
+                    colorClass="stat-green"
+                    trendVal="+8%"
+                    trendUp
+                    trend="from yesterday"
+                    delay="0.07s"
+                />
+                <StatCard
+                    title="Pending"
+                    value={stats.pendingTasks || 8}
+                    icon={<Clock size={20} />}
+                    colorClass="stat-orange"
+                    trendVal="-3%"
+                    trendUp={false}
+                    trend="from yesterday"
+                    delay="0.14s"
+                />
+                <StatCard
+                    title="Time Saved"
+                    value={timeSavedHours || '2.5'}
+                    unit="h"
+                    icon={<Target size={20} />}
+                    colorClass="stat-blue"
+                    trendVal="+15%"
+                    trendUp
+                    trend="this week"
+                    delay="0.21s"
+                />
             </div>
 
-            {/* ── Bottom Row ── */}
-            <div className="db-bot-row">
+            {/* ── Main Two-Column Area ── */}
+            <div className="dash-main-cols">
 
-                {/* Recent Tasks */}
+                {/* Left: AI Recommendations */}
                 <motion.div
-                    className="db-panel"
-                    initial={{ opacity: 0, y: 16 }}
+                    className="dash-panel"
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.3 }}
                 >
-                    <div className="db-panel-header">
-                        <h3 className="db-panel-title">Recent Tasks</h3>
-                        <button className="db-view-all">View all</button>
-                    </div>
-                    <div className="db-tasks-table">
-                        <div className="db-tasks-header">
-                            <span>Task Name</span><span>Priority</span><span>Status</span><span>Created</span><span />
+                    <div className="dash-panel-header">
+                        <div className="dash-panel-title">
+                            <Zap size={18} className="panel-title-icon purple" />
+                            <span>AI Recommendations</span>
                         </div>
-                        {realTasks.length === 0 ? (
-                            <div style={{padding:'1.5rem',textAlign:'center',color:'#64748b',fontSize:'0.85rem'}}>No tasks yet. Use Generate above to create your first task!</div>
-                        ) : realTasks.map((t, i) => (
-                            <div key={t.id || i} className="db-task-row">
-                                <div className="db-task-info">
-                                    <div className="db-task-icon" style={{background:'rgba(139,92,246,0.1)'}}><CheckCircle2 size={14} color="#8b5cf6" /></div>
-                                    <span className="db-task-name">{t.title}</span>
-                                </div>
-                                <span className="db-task-sched" style={{color: t.priority==='High'?'#ef4444': t.priority==='Low'?'#10b981':'#f59e0b', fontWeight:600}}>{t.priority || 'Medium'}</span>
-                                <span className={`db-task-status status-${(t.status||'pending').toLowerCase()}`}>{t.status || 'Pending'}</span>
-                                <span className="db-task-lastrun">{t.createdAt ? new Date(t.createdAt).toLocaleDateString() : '-'}</span>
-                                <button className="db-task-more"><MoreHorizontal size={15} /></button>
-                            </div>
-                        ))}
                     </div>
+
+                    <div className="rec-list">
+                        <RecommendationItem
+                            iconClass="rec-alert"
+                            icon={<AlertTriangle size={16} />}
+                            title="Focus on 3 high-priority tasks"
+                            subtitle="You have 3 urgent tasks that need attention"
+                            onClick={() => navigate('/tasks')}
+                        />
+                        <RecommendationItem
+                            iconClass="rec-positive"
+                            icon={<TrendingUp size={16} />}
+                            title="Best time to focus"
+                            subtitle="Your peak productivity is 2:00 PM - 4:00 PM"
+                        />
+                        <RecommendationItem
+                            iconClass="rec-neutral"
+                            icon={<Mail size={16} />}
+                            title="Email overload detected"
+                            subtitle="Consider batching emails to save time"
+                            onClick={() => navigate('/emails')}
+                        />
+                    </div>
+
+                    <button className="panel-view-all-link" onClick={() => navigate('/dashboard/insights')}>
+                        View all insights <ArrowRight size={14} />
+                    </button>
                 </motion.div>
 
-                {/* Activity Feed */}
+                {/* Right: Smart Schedule */}
                 <motion.div
-                    className="db-panel"
-                    initial={{ opacity: 0, y: 16 }}
+                    className="dash-panel"
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.35 }}
                 >
-                    <div className="db-panel-header">
-                        <h3 className="db-panel-title">Activity Feed</h3>
-                        <button className="db-view-all">View all</button>
+                    <div className="dash-panel-header">
+                        <div className="dash-panel-title">
+                            <Calendar size={18} className="panel-title-icon blue" />
+                            <span>Smart Schedule</span>
+                        </div>
+                        <button className="panel-view-all-btn" onClick={() => navigate('/reminders')}>
+                            View Calendar
+                        </button>
                     </div>
-                    <div className="db-activity-list">
-                        {notifications.length === 0 && realTasks.length === 0 ? (
-                            <div style={{padding:'1rem',textAlign:'center',color:'#64748b',fontSize:'0.85rem'}}>No recent activity yet.</div>
-                        ) : [
-                            ...notifications.slice(0,4).map((n, i) => (
-                                <ActivityItem key={`n-${i}`} icon={<Bell size={12}/>} iconBg="#8b5cf6" text={n.message || 'New notification'} time={n.createdAt ? new Date(n.createdAt).toLocaleString() : 'Recently'} />
-                            )),
-                            ...realTasks.slice(0, Math.max(0, 4 - notifications.slice(0,4).length)).map((t, i) => (
-                                <ActivityItem key={`t-${i}`} icon={<CheckCircle2 size={12}/>} iconBg="#10b981" text={`Task <strong>${t.title}</strong> ${t.status === 'Completed' ? 'completed' : 'created'}`} time={t.createdAt ? new Date(t.createdAt).toLocaleString() : 'Recently'} />
-                            ))
-                        ]}
+
+                    <div className="schedule-list">
+                        <ScheduleItem time="9:00 AM"  title="Team Standup"         duration="30 min" type="Meeting"    dotColor="#8B5CF6" />
+                        <ScheduleItem time="11:00 AM" title="Project Review"       duration="1 hr"   type="Deep Work"  dotColor="#10B981" />
+                        <ScheduleItem time="2:00 PM"  title="Client Follow-up"    duration="45 min" type="Important"  dotColor="#F59E0B" />
+                        <ScheduleItem time="4:00 PM"  title="Email Batch Processing" duration="30 min" type="Focus Time" dotColor="#60A5FA" />
+                    </div>
+
+                    <div className="schedule-focus-hint">
+                        <TrendingUp size={13} />
+                        Optimal focus time: 2:00 PM - 4:00 PM
                     </div>
                 </motion.div>
             </div>
 
-            {/* ── Promo Banner ── */}
-            <motion.div
-                className="db-promo-banner"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
+            {/* ── Bottom Row: Productivity Insights + Recent Tasks ── */}
+            <div className="dash-bottom-cols">
+
+                {/* Productivity Insights */}
+                <motion.div
+                    className="dash-panel"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                    <div className="dash-panel-header">
+                        <div className="dash-panel-title">
+                            <BarChart2 size={18} className="panel-title-icon purple" />
+                            <span>Productivity Insights</span>
+                        </div>
+                        <select className="panel-period-select">
+                            <option>This Week</option>
+                            <option>Last Week</option>
+                            <option>This Month</option>
+                        </select>
+                    </div>
+
+                    {/* Mini wave chart SVG */}
+                    <div className="productivity-wave-chart">
+                        <svg viewBox="0 0 400 80" className="wave-svg" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="waveGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.25" />
+                                    <stop offset="100%" stopColor="#7C3AED" stopOpacity="0" />
+                                </linearGradient>
+                            </defs>
+                            <path d="M0,50 C50,30 80,60 120,40 C160,20 190,55 240,35 C290,15 320,50 360,30 L400,20 L400,80 L0,80 Z"
+                                fill="url(#waveGrad)" />
+                            <path d="M0,50 C50,30 80,60 120,40 C160,20 190,55 240,35 C290,15 320,50 360,30 L400,20"
+                                fill="none" stroke="#7C3AED" strokeWidth="2.5" />
+                        </svg>
+                    </div>
+
+                    <div className="productivity-metrics">
+                        <div className="prod-metric">
+                            <TrendingUp size={18} className="prod-metric-icon green" />
+                            <div className="prod-metric-value">85%</div>
+                            <div className="prod-metric-label">Task Completion</div>
+                        </div>
+                        <div className="prod-metric">
+                            <Mail size={18} className="prod-metric-icon blue" />
+                            <div className="prod-metric-value">12</div>
+                            <div className="prod-metric-label">Emails Processed</div>
+                        </div>
+                        <div className="prod-metric">
+                            <Clock size={18} className="prod-metric-icon purple" />
+                            <div className="prod-metric-value">3</div>
+                            <div className="prod-metric-label">Hours Focused</div>
+                        </div>
+                        <div className="prod-metric">
+                            <Star size={18} className="prod-metric-icon orange" />
+                            <div className="prod-metric-value">7</div>
+                            <div className="prod-metric-label">Day Streak</div>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Recent Tasks */}
+                <motion.div
+                    className="dash-panel"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.45 }}
+                >
+                    <div className="dash-panel-header">
+                        <div className="dash-panel-title">
+                            <CheckCircle size={18} className="panel-title-icon green" />
+                            <span>Recent Tasks</span>
+                        </div>
+                        <button className="panel-view-all-btn" onClick={() => navigate('/tasks')}>View all</button>
+                    </div>
+
+                    <div className="recent-tasks-list">
+                        {recentTasks.length > 0 ? recentTasks.map((task, i) => (
+                            <div key={task.id || i} className="recent-task-row">
+                                <input type="checkbox" className="task-checkbox" checked={task.status === 'COMPLETED'} readOnly />
+                                <span className="recent-task-title">{task.title || task.subject}</span>
+                                <span className={`task-priority-badge priority-${(task.priority || 'low').toLowerCase()}`}>
+                                    {task.priority || 'Low'}
+                                </span>
+                                <span className="recent-task-date">Today</span>
+                            </div>
+                        )) : (
+                            <>
+                                <div className="recent-task-row">
+                                    <input type="checkbox" className="task-checkbox" readOnly />
+                                    <span className="recent-task-title">Review marketing proposal</span>
+                                    <span className="task-priority-badge priority-high">High</span>
+                                    <span className="recent-task-date">Today</span>
+                                </div>
+                                <div className="recent-task-row">
+                                    <input type="checkbox" className="task-checkbox" readOnly />
+                                    <span className="recent-task-title">Prepare Q4 presentation</span>
+                                    <span className="task-priority-badge priority-medium">Medium</span>
+                                    <span className="recent-task-date">Tomorrow</span>
+                                </div>
+                                <div className="recent-task-row">
+                                    <input type="checkbox" className="task-checkbox" readOnly />
+                                    <span className="recent-task-title">Update client documents</span>
+                                    <span className="task-priority-badge priority-low">Low</span>
+                                    <span className="recent-task-date">May 22</span>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </motion.div>
+            </div>
+
+            {/* Floating + Button */}
+            <motion.button
+                className="dash-fab"
+                onClick={() => navigate('/tasks')}
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6, type: 'spring' }}
+                title="Create Task"
             >
-                <div className="db-promo-bot-icon">
-                    <Sparkles size={28} />
-                </div>
-                <div className="db-promo-text">
-                    <h4>Automate more. Worry less.</h4>
-                    <p>Let AutoTask handle the boring stuff so you can focus on what matters.</p>
-                </div>
-                <button className="db-promo-btn" onClick={() => navigate('/tasks')}>
-                    <Play size={14} fill="currentColor" /> Explore Integrations
-                </button>
-            </motion.div>
+                <Plus size={24} />
+            </motion.button>
 
         </div>
     );
